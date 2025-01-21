@@ -1,6 +1,7 @@
 package com.backend.music.service.impl;
 
 import com.backend.music.dto.AlbumDTO;
+import com.backend.music.dto.AlbumCreateDTO;
 import com.backend.music.mapper.AlbumMapper;
 import com.backend.music.model.Album;
 import com.backend.music.repository.AlbumRepository;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
@@ -52,10 +54,15 @@ public class AlbumServiceImpl implements AlbumService {
     }
     
     @Override
-    public AlbumDTO createAlbum(AlbumDTO albumDTO) {
-        Album album = albumMapper.toEntity(albumDTO);
-        Album savedAlbum = albumRepository.save(album);
-        return albumMapper.toDto(savedAlbum);
+    @Transactional
+    public AlbumDTO createAlbum(AlbumCreateDTO albumDTO) {
+        Album album = new Album();
+        album.setTitre(albumDTO.getTitre());
+        album.setArtiste(albumDTO.getArtiste());
+        album.setAnnee(albumDTO.getAnnee());
+        album.setSongIds(new ArrayList<>());
+        
+        return albumMapper.toDto(albumRepository.save(album));
     }
     
     @Override
@@ -74,5 +81,19 @@ public class AlbumServiceImpl implements AlbumService {
             throw new ResourceNotFoundException("Album not found with id: " + id);
         }
         albumRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional
+    public AlbumDTO addSongToAlbum(String albumId, String songId) {
+        Album album = albumRepository.findById(albumId)
+            .orElseThrow(() -> new ResourceNotFoundException("Album not found"));
+        
+        if (!album.getSongIds().contains(songId)) {
+            album.getSongIds().add(songId);
+            album = albumRepository.save(album);
+        }
+        
+        return albumMapper.toDto(album);
     }
 } 

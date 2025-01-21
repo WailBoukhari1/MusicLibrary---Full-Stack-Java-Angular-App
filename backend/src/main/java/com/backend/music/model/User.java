@@ -19,11 +19,11 @@ public class User implements UserDetails {
     private String id;
     
     @Indexed(unique = true)
-    private String login;
+    private String username;
+    private String email;
     private String password;
     private Boolean active = true;
     private Set<Role> roles = new HashSet<>();
-    private String email;
     private String role;
 
     @Override
@@ -35,7 +35,7 @@ public class User implements UserDetails {
 
     @Override
     public String getUsername() {
-        return login;
+        return username;
     }
 
     @Override
