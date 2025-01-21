@@ -3,6 +3,7 @@ package com.backend.music.dto;
 import lombok.Data;
 import jakarta.validation.constraints.Size;
 import java.util.Date;
+import java.util.Set;
 
 @Data
 public class SongDTO {
@@ -17,4 +18,5 @@ public class SongDTO {
     private Date dateAjout;
     private String albumId;
     private String audioFileId;
+    private Set<CategoryDTO> categories;
 } 

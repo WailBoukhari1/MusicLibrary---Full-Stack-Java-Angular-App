@@ -1,6 +1,8 @@
 package com.backend.music.model;
 
 import java.util.Date;
+import java.util.Set;
+import java.util.HashSet;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
@@ -29,4 +31,7 @@ public class Song {
 
     private String artiste;
     private String albumId;
+
+    @DBRef
+    private Set<Category> categories = new HashSet<>();
 } 
