@@ -1,13 +1,20 @@
 package com.backend.music.controller;
 
 import com.backend.music.dto.AlbumDTO;
+import com.backend.music.dto.ApiResponse;
+import com.backend.music.dto.AlbumCreateDTO;
+import com.backend.music.dto.SongDTO;
 import com.backend.music.service.AlbumService;
+import com.backend.music.service.SongService;
+
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
@@ -15,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 public class AlbumController {
     
     private final AlbumService albumService;
+    private final SongService songService;
     
     @GetMapping("/albums")
     public ResponseEntity<Page<AlbumDTO>> getAllAlbums(Pageable pageable) {
@@ -44,8 +52,11 @@ public class AlbumController {
     
     @PostMapping("/albums")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<AlbumDTO> createAlbum(@RequestBody AlbumDTO albumDTO) {
-        return ResponseEntity.ok(albumService.createAlbum(albumDTO));
+    public ResponseEntity<ApiResponse<AlbumDTO>> createAlbum(@Valid @RequestBody AlbumCreateDTO albumDTO) {
+        return ResponseEntity.ok(ApiResponse.success(
+            "Album created successfully",
+            albumService.createAlbum(albumDTO)
+        ));
     }
     
     @PutMapping("/albums/{id}")
@@ -59,5 +70,20 @@ public class AlbumController {
     public ResponseEntity<Void> deleteAlbum(@PathVariable String id) {
         albumService.deleteAlbum(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{albumId}/songs")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<SongDTO>> addSongToAlbum(
+            @PathVariable String albumId,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("title") String title,
+            @RequestParam("artist") String artist) {
+        
+        SongDTO song = songService.uploadSong(file, title, artist, albumId);
+        return ResponseEntity.ok(ApiResponse.success(
+            "Song added to album successfully",
+            song
+        ));
     }
 } 

@@ -4,6 +4,7 @@ import com.backend.music.dto.SongDTO;
 import com.backend.music.mapper.SongMapper;
 import com.backend.music.model.Song;
 import com.backend.music.repository.SongRepository;
+import com.backend.music.service.AlbumService;
 import com.backend.music.service.SongService;
 import com.backend.music.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Date;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +30,8 @@ public class SongServiceImpl implements SongService {
     private static final Logger logger = LoggerFactory.getLogger(SongServiceImpl.class);
     
     private final SongRepository songRepository;
+    private final AlbumService albumService;
+    private final FileStorageService fileStorageService;
     private final SongMapper songMapper;
     private final GridFsTemplate gridFsTemplate;
     private final FileValidationService fileValidationService;
@@ -58,26 +62,25 @@ public class SongServiceImpl implements SongService {
     }
     
     @Override
-    public SongDTO createSong(SongDTO songDTO, MultipartFile audioFile) {
-        try {
-            fileValidationService.validateAudioFile(audioFile);
-            logger.info("Creating new song: {}", songDTO.getTitre());
-            
-            String audioFileId = gridFsTemplate.store(
-                audioFile.getInputStream(),
-                audioFile.getOriginalFilename(),
-                audioFile.getContentType()
-            ).toString();
-            
-            songDTO.setAudioFileId(audioFileId);
-            Song song = songMapper.toEntity(songDTO);
-            Song savedSong = songRepository.save(song);
-            logger.info("Song created successfully with id: {}", savedSong.getId());
-            return songMapper.toDto(savedSong);
-        } catch (IOException e) {
-            logger.error("Failed to store audio file", e);
-            throw new RuntimeException("Failed to store audio file", e);
-        }
+    @Transactional
+    public SongDTO uploadSong(MultipartFile file, String title, String artist, String albumId) {
+        // Store the audio file
+        String audioFileId = fileStorageService.storeFile(file);
+
+        // Create and save the song
+        Song song = new Song();
+        song.setTitre(title);
+        song.setArtiste(artist);
+        song.setAlbumId(albumId);
+        song.setAudioFileId(audioFileId);
+        song.setDateAjout(new Date());
+        
+        Song savedSong = songRepository.save(song);
+        
+        // Add song to album
+        albumService.addSongToAlbum(albumId, savedSong.getId());
+        
+        return songMapper.toDto(savedSong);
     }
     
     @Override
@@ -109,5 +112,23 @@ public class SongServiceImpl implements SongService {
         } catch (IOException e) {
             throw new ResourceNotFoundException("Audio file not found with id: " + audioFileId);
         }
+    }
+    
+    @Override
+    @Transactional
+    public SongDTO createSong(SongDTO songDTO, MultipartFile audioFile) {
+        String audioFileId = fileStorageService.storeFile(audioFile);
+        
+        Song song = songMapper.toEntity(songDTO);
+        song.setAudioFileId(audioFileId);
+        song.setDateAjout(new Date());
+        
+        Song savedSong = songRepository.save(song);
+        
+        if (song.getAlbumId() != null) {
+            albumService.addSongToAlbum(song.getAlbumId(), savedSong.getId());
+        }
+        
+        return songMapper.toDto(savedSong);
     }
 } 

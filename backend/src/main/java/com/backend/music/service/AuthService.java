@@ -1,12 +1,15 @@
 package com.backend.music.service;
 
 import com.backend.music.dto.AuthRequestDTO;
-import com.backend.music.dto.AuthResponseDTO;
+import com.backend.music.dto.AuthResponse;
+import com.backend.music.dto.LoginRequest;
+import com.backend.music.dto.RegisterRequest;
 import com.backend.music.dto.UserDTO;
 
 public interface AuthService {
-    AuthResponseDTO login(AuthRequestDTO request);
-    UserDTO register(AuthRequestDTO request);
+    AuthResponse login(String username, String password);
+    UserDTO register(RegisterRequest request);
     boolean validateToken(String token);
-    void refreshToken(String token);
+    AuthResponse refreshToken(String refreshToken);
+    void logout(String token);
 } 

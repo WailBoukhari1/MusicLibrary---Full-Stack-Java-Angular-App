@@ -73,7 +73,7 @@ public class UserServiceImpl implements UserService {
     
     @Override
     public UserDTO getUserByUsername(String username) {
-        return userRepository.findByLogin(username)
+        return userRepository.findByUsername(username)
             .map(userMapper::toDTO)
             .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
     }

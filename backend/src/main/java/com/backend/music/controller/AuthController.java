@@ -17,8 +17,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.security.core.AuthenticationException;
 import com.backend.music.service.UserService;
+import com.backend.music.dto.RefreshTokenRequest;
+import com.backend.music.dto.LoginRequest;
+import com.backend.music.dto.AuthResponse;
+import com.backend.music.dto.RegisterRequest;
+import org.springframework.security.core.AuthenticationException;
 
 @RestController
 @RequiredArgsConstructor
@@ -31,21 +35,27 @@ public class AuthController {
     private final UserService userService;
     
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthResponseDTO>> login(@Valid @RequestBody AuthRequestDTO request) {
+    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
         try {
-            AuthResponseDTO response = authService.login(request);
-            return ResponseEntity.ok(ApiResponse.success("Login successful", response));
+            AuthResponse authResponse = authService.login(request.getUsername(), request.getPassword());
+            return ResponseEntity.ok(ApiResponse.success("Login successful", authResponse));
         } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.<AuthResponseDTO>builder()
+                .body(ApiResponse.<AuthResponse>builder()
                     .success(false)
-                    .error(e.getMessage())
+                    .error("Invalid credentials")
+                    .build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.<AuthResponse>builder()
+                    .success(false)
+                    .error("An error occurred during login")
                     .build());
         }
     }
     
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<UserDTO>> register(@Valid @RequestBody AuthRequestDTO request) {
+    public ResponseEntity<ApiResponse<UserDTO>> register(@Valid @RequestBody RegisterRequest request) {
         try {
             UserDTO user = authService.register(request);
             return ResponseEntity.ok(ApiResponse.success("User registered successfully", user));
@@ -100,5 +110,21 @@ public class AuthController {
                 .success(false)
                 .error("Invalid token format")
                 .build());
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(@RequestBody RefreshTokenRequest request) {
+        try {
+            return ResponseEntity.ok(ApiResponse.success(
+                "Token refreshed successfully", 
+                authService.refreshToken(request.getRefreshToken())
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.<AuthResponse>builder()
+                    .success(false)
+                    .error(e.getMessage())
+                    .build());
+        }
     }
 } 

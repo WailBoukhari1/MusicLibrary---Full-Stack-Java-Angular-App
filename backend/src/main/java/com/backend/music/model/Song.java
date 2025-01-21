@@ -1,11 +1,13 @@
 package com.backend.music.model;
 
-import lombok.Data;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.DBRef;
-import jakarta.validation.constraints.Size;
 import java.util.Date;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import jakarta.validation.constraints.Size;
+import lombok.Data;
 
 @Data
 @Document(collection = "songs")
@@ -24,4 +26,7 @@ public class Song {
     
     @DBRef
     private Album album;
+
+    private String artiste;
+    private String albumId;
 } 
