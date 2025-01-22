@@ -1,37 +1,54 @@
 package com.backend.music.model;
 
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.List;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Document(collection = "songs")
 public class Song {
     @Id
     private String id;
-    private String titre;
-    private Integer duree;
+    
+    @NotBlank(message = "Title is required")
+    private String title;
+    
+    @NotBlank(message = "Artist is required")
+    private String artist;
+    
+    @Min(value = 1, message = "Track number must be greater than 0")
     private Integer trackNumber;
     
-    @Size(max = 200)
+    @Size(max = 200, message = "Description cannot exceed 200 characters")
     private String description;
-    private String categorie;
-    private Date dateAjout;
+    
     private String audioFileId;
+    private Integer duration;
     
     @DBRef
     private Album album;
-
-    private String artiste;
-    private String albumId;
-
-    @DBRef
-    private Set<Category> categories = new HashSet<>();
+    
+    @Builder.Default
+    private List<String> categories = new ArrayList<>();
+    
+    @Builder.Default
+    private Date createdAt = new Date();
+    
+    @Builder.Default
+    private Date updatedAt = new Date();
 } 

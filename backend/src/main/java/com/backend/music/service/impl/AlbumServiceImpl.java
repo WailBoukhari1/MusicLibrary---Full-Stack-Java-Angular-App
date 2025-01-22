@@ -1,18 +1,20 @@
 package com.backend.music.service.impl;
 
-import com.backend.music.dto.AlbumDTO;
-import com.backend.music.dto.AlbumCreateDTO;
+import com.backend.music.dto.request.AlbumRequest;
+import com.backend.music.dto.response.AlbumResponse;
 import com.backend.music.mapper.AlbumMapper;
 import com.backend.music.model.Album;
+import com.backend.music.model.Track;
 import com.backend.music.repository.AlbumRepository;
+import com.backend.music.repository.TrackRepository;
 import com.backend.music.service.AlbumService;
+import com.backend.music.service.FileStorageService;
 import com.backend.music.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
@@ -20,80 +22,100 @@ import java.util.ArrayList;
 public class AlbumServiceImpl implements AlbumService {
     
     private final AlbumRepository albumRepository;
+    private final TrackRepository trackRepository;
     private final AlbumMapper albumMapper;
+    private final FileStorageService fileStorageService;
     
     @Override
-    public Page<AlbumDTO> getAllAlbums(Pageable pageable) {
+    public Page<AlbumResponse> getAllAlbums(Pageable pageable) {
         return albumRepository.findAll(pageable)
-                .map(albumMapper::toDto);
+                .map(albumMapper::toResponseDto);
     }
     
     @Override
-    public Page<AlbumDTO> searchByTitle(String title, Pageable pageable) {
-        return albumRepository.findByTitreContainingIgnoreCase(title, pageable)
-                .map(albumMapper::toDto);
+    public Page<AlbumResponse> searchByTitle(String title, Pageable pageable) {
+        return albumRepository.findByTitleContainingIgnoreCase(title, pageable)
+                .map(albumMapper::toResponseDto);
     }
     
     @Override
-    public Page<AlbumDTO> searchByArtist(String artist, Pageable pageable) {
-        return albumRepository.findByArtisteContainingIgnoreCase(artist, pageable)
-                .map(albumMapper::toDto);
+    public Page<AlbumResponse> searchByArtist(String artist, Pageable pageable) {
+        return albumRepository.findByArtistContainingIgnoreCase(artist, pageable)
+                .map(albumMapper::toResponseDto);
     }
     
     @Override
-    public Page<AlbumDTO> filterByYear(Integer year, Pageable pageable) {
-        return albumRepository.findByAnnee(year, pageable)
-                .map(albumMapper::toDto);
+    public Page<AlbumResponse> filterByYear(Integer year, Pageable pageable) {
+        return albumRepository.findByYear(year, pageable)
+                .map(albumMapper::toResponseDto);
     }
     
     @Override
-    public AlbumDTO getAlbumById(String id) {
+    public AlbumResponse getAlbumById(String id) {
         return albumRepository.findById(id)
-                .map(albumMapper::toDto)
+                .map(albumMapper::toResponseDto)
                 .orElseThrow(() -> new ResourceNotFoundException("Album not found with id: " + id));
     }
     
     @Override
     @Transactional
-    public AlbumDTO createAlbum(AlbumCreateDTO albumDTO) {
-        Album album = new Album();
-        album.setTitre(albumDTO.getTitre());
-        album.setArtiste(albumDTO.getArtiste());
-        album.setAnnee(albumDTO.getAnnee());
-        album.setSongIds(new ArrayList<>());
+    public AlbumResponse createAlbum(AlbumRequest request) {
+        String coverUrl = null;
+        if (request.getImageFile() != null) {
+            coverUrl = fileStorageService.storeFile(request.getImageFile());
+        }
         
-        return albumMapper.toDto(albumRepository.save(album));
+        Album album = albumMapper.toEntity(request);
+        album.setCoverUrl(coverUrl);
+        
+        Album savedAlbum = albumRepository.save(album);
+        return albumMapper.toResponseDto(savedAlbum);
     }
     
     @Override
-    public AlbumDTO updateAlbum(String id, AlbumDTO albumDTO) {
+    @Transactional
+    public AlbumResponse updateAlbum(String id, AlbumRequest request) {
         return albumRepository.findById(id)
                 .map(album -> {
-                    albumMapper.updateEntityFromDto(albumDTO, album);
-                    return albumMapper.toDto(albumRepository.save(album));
+                    if (request.getImageFile() != null) {
+                        String coverUrl = fileStorageService.storeFile(request.getImageFile());
+                        album.setCoverUrl(coverUrl);
+                    }
+                    
+                    albumMapper.updateEntityFromDto(request, album);
+                    return albumMapper.toResponseDto(albumRepository.save(album));
                 })
                 .orElseThrow(() -> new ResourceNotFoundException("Album not found with id: " + id));
     }
     
     @Override
+    @Transactional
     public void deleteAlbum(String id) {
-        if (!albumRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Album not found with id: " + id);
+        Album album = albumRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Album not found with id: " + id));
+        
+        if (album.getCoverUrl() != null) {
+            fileStorageService.deleteFile(album.getCoverUrl());
         }
+        
         albumRepository.deleteById(id);
     }
-
+    
     @Override
     @Transactional
-    public AlbumDTO addSongToAlbum(String albumId, String songId) {
+    public AlbumResponse addTrackToAlbum(String albumId, String trackId) {
         Album album = albumRepository.findById(albumId)
-            .orElseThrow(() -> new ResourceNotFoundException("Album not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Album not found with id: " + albumId));
         
-        if (!album.getSongIds().contains(songId)) {
-            album.getSongIds().add(songId);
-            album = albumRepository.save(album);
-        }
+        Track track = trackRepository.findById(trackId)
+                .orElseThrow(() -> new ResourceNotFoundException("Track not found with id: " + trackId));
         
-        return albumMapper.toDto(album);
+        track.setAlbum(album);
+        album.getTracks().add(track);
+        
+        trackRepository.save(track);
+        Album savedAlbum = albumRepository.save(album);
+        
+        return albumMapper.toResponseDto(savedAlbum);
     }
 } 

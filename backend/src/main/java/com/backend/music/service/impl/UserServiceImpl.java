@@ -1,6 +1,7 @@
 package com.backend.music.service.impl;
 
-import com.backend.music.dto.UserDTO;
+import com.backend.music.dto.request.RegisterRequest;
+import com.backend.music.dto.response.UserResponse;
 import com.backend.music.exception.ResourceNotFoundException;
 import com.backend.music.mapper.UserMapper;
 import com.backend.music.model.Role;
@@ -27,27 +28,27 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     
     @Override
-    public Page<UserDTO> getAllUsers(Pageable pageable) {
+    public Page<UserResponse> getAllUsers(Pageable pageable) {
         return userRepository.findAll(pageable)
-                .map(userMapper::toDTO);
+                .map(userMapper::toResponseDto);
     }
     
     @Override
-    public UserDTO getUserById(String id) {
+    public UserResponse getUserById(String id) {
         return userRepository.findById(id)
-                .map(userMapper::toDTO)
+                .map(userMapper::toResponseDto)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     }
     
     @Override
-    public UserDTO createUser(UserDTO userDTO) {
-        User user = userMapper.toEntity(userDTO);
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userMapper.toDTO(userRepository.save(user));
+    public UserResponse createUser(RegisterRequest request) {
+        User user = userMapper.toEntity(request);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        return userMapper.toResponseDto(userRepository.save(user));
     }
     
     @Override
-    public UserDTO updateUserRoles(String id, Set<String> roles) {
+    public UserResponse updateUserRoles(String id, Set<String> roles) {
         return userRepository.findById(id)
                 .map(user -> {
                     Set<Role> newRoles = roles.stream()
@@ -58,7 +59,7 @@ public class UserServiceImpl implements UserService {
                             })
                             .collect(Collectors.toSet());
                     user.setRoles(newRoles);
-                    return userMapper.toDTO(userRepository.save(user));
+                    return userMapper.toResponseDto(userRepository.save(user));
                 })
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     }
@@ -72,9 +73,9 @@ public class UserServiceImpl implements UserService {
     }
     
     @Override
-    public UserDTO getUserByUsername(String username) {
+    public UserResponse getUserByUsername(String username) {
         return userRepository.findByUsername(username)
-            .map(userMapper::toDTO)
+            .map(userMapper::toResponseDto)
             .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
     }
 } 

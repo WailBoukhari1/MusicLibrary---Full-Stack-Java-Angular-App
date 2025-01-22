@@ -1,30 +1,39 @@
 package com.backend.music.mapper;
 
-import com.backend.music.dto.UserDTO;
+import com.backend.music.dto.request.RegisterRequest;
+import com.backend.music.dto.response.UserResponse;
 import com.backend.music.model.User;
 import com.backend.music.model.Role;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring")
+@Mapper(
+    componentModel = "spring",
+    nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
+)
 public interface UserMapper {
     
     @Mapping(target = "roles", source = "roles", qualifiedByName = "rolesToStrings")
-    UserDTO toDTO(User user);
-    
-    @Mapping(target = "roles", source = "roles", qualifiedByName = "stringsToRoles")
-    User toEntity(UserDTO userDTO);
+    UserResponse toResponseDto(User user);
     
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "roles", ignore = true)
-    void updateEntityFromDto(UserDTO userDTO, @MappingTarget User user);
+    @Mapping(target = "active", constant = "true")
+    User toEntity(RegisterRequest request);
+    
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "roles", ignore = true)
+    @Mapping(target = "password", ignore = true)
+    void updateEntityFromDto(RegisterRequest request, @MappingTarget User user);
 
     @Named("rolesToStrings")
     default Set<String> rolesToStrings(Set<Role> roles) {
+        if (roles == null) return Set.of();
         return roles.stream()
                 .map(role -> role.getName().replace("ROLE_", ""))
                 .collect(Collectors.toSet());
@@ -32,10 +41,11 @@ public interface UserMapper {
 
     @Named("stringsToRoles")
     default Set<Role> stringsToRoles(Set<String> roleNames) {
+        if (roleNames == null) return Set.of();
         return roleNames.stream()
             .map(name -> {
                 Role role = new Role();
-                role.setName(name);
+                role.setName("ROLE_" + name.toUpperCase());
                 return role;
             })
             .collect(Collectors.toSet());

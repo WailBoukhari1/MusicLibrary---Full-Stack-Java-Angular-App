@@ -1,19 +1,21 @@
 package com.backend.music.service;
 
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.backend.music.dto.SongDTO;
+import com.backend.music.dto.request.SongRequest;
+import com.backend.music.dto.response.SongResponse;
+import com.backend.music.model.Song;
 
 public interface SongService {
-    Page<SongDTO> getAllSongs(Pageable pageable);
-    Page<SongDTO> searchByTitle(String title, Pageable pageable);
-    Page<SongDTO> getSongsByAlbum(String albumId, Pageable pageable);
-    SongDTO getSongById(String id);
-    SongDTO createSong(SongDTO songDTO, MultipartFile audioFile);
-    SongDTO updateSong(String id, SongDTO songDTO);
+    Page<SongResponse> getAllSongs(Pageable pageable);
+    Page<SongResponse> searchByTitle(String title, Pageable pageable);
+    Page<SongResponse> getSongsByAlbum(String albumId, Pageable pageable);
+    SongResponse getSongById(String id);
+    SongResponse createSong(SongRequest request);
+    SongResponse updateSong(String id, SongRequest request);
     void deleteSong(String id);
-    byte[] getAudioFile(String audioFileId);
-    SongDTO uploadSong(MultipartFile file, String title, String artist, String albumId);
+    Resource getAudioFile(String id);
 } 

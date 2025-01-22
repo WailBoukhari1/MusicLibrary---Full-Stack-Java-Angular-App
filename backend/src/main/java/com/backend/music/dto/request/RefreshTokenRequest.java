@@ -1,4 +1,4 @@
-package com.backend.music.dto;
+package com.backend.music.dto.request;
 
 import lombok.Data;
 

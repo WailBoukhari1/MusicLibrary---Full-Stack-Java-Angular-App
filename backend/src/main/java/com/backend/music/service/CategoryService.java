@@ -1,12 +1,13 @@
 package com.backend.music.service;
 
-import com.backend.music.model.Category;
+import com.backend.music.dto.request.CategoryRequest;
+import com.backend.music.dto.response.CategoryResponse;
 import java.util.List;
 
 public interface CategoryService {
-    List<Category> getAllCategories();
-    Category getCategoryById(String id);
-    Category createCategory(Category category);
-    Category updateCategory(String id, Category category);
+    List<CategoryResponse> getAllCategories();
+    CategoryResponse getCategoryById(String id);
+    CategoryResponse createCategory(CategoryRequest request);
+    CategoryResponse updateCategory(String id, CategoryRequest request);
     void deleteCategory(String id);
 } 
