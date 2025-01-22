@@ -1,21 +1,48 @@
 package com.backend.music.mapper;
 
-import com.backend.music.dto.AlbumDTO;
-import com.backend.music.model.Album;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
-@Mapper(componentModel = "spring")
+import com.backend.music.dto.request.AlbumRequest;
+import com.backend.music.dto.response.AlbumResponse;
+import com.backend.music.model.Album;
+import com.backend.music.model.Track;
+
+@Mapper(
+    componentModel = "spring",
+    nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
+)
 public interface AlbumMapper {
     
-    @Mapping(target = "songIds", expression = "java(album.getSongs().stream().map(song -> song.getId()).toList())")
-    AlbumDTO toDto(Album album);
+    @Mapping(target = "imageFile", ignore = true)
+    AlbumRequest toRequestDto(Album album);
     
-    @Mapping(target = "songs", ignore = true)
-    Album toEntity(AlbumDTO albumDTO);
+    AlbumResponse toResponseDto(Album album);
     
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "songs", ignore = true)
-    void updateEntityFromDto(AlbumDTO albumDTO, @MappingTarget Album album);
+    @Mapping(target = "tracks", ignore = true)
+    @Mapping(target = "coverUrl", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    Album toEntity(AlbumRequest albumRequest);
+    
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "tracks", ignore = true)
+    @Mapping(target = "coverUrl", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    void updateEntityFromDto(AlbumRequest albumRequest, @MappingTarget Album album);
+
+    default List<Long> mapTracks(List<Track> tracks) {
+        if (tracks == null) return new ArrayList<>();
+        return tracks.stream()
+            .map(Track::getId)
+            .collect(Collectors.toList());
+    }
 } 

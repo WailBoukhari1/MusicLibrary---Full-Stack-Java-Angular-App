@@ -1,11 +1,9 @@
 package com.backend.music.service.impl;
 
-import com.backend.music.dto.AuthRequestDTO;
-import com.backend.music.dto.AuthResponse;
-import com.backend.music.dto.AuthResponseDTO;
-import com.backend.music.dto.LoginRequest;
-import com.backend.music.dto.UserDTO;
-import com.backend.music.dto.RegisterRequest;
+import com.backend.music.dto.request.LoginRequest;
+import com.backend.music.dto.request.RegisterRequest;
+import com.backend.music.dto.response.AuthResponse;
+import com.backend.music.dto.response.UserResponse;
 import com.backend.music.exception.AuthenticationException;
 import com.backend.music.exception.TokenRefreshException;
 import com.backend.music.mapper.UserMapper;
@@ -23,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -31,9 +28,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -50,11 +45,10 @@ public class AuthServiceImpl implements AuthService {
     private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
 
     @Override
-    public AuthResponse login(String username, String password) {
+    public AuthResponse login(LoginRequest request) {
         try {
-            log.debug("Attempting authentication for user: {}", username);
             Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(username, password)
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
             );
             
             SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -63,27 +57,24 @@ public class AuthServiceImpl implements AuthService {
             String token = jwtUtil.generateToken(userDetails);
             String refreshToken = jwtUtil.generateRefreshToken(userDetails);
             
-            User user = userRepository.findByUsername(username)
+            User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
                 
-            log.debug("User authenticated successfully: {}", username);    
             return AuthResponse.builder()
                 .token(token)
                 .refreshToken(refreshToken)
-                .user(userMapper.toDTO(user))
+                .username(user.getUsername())
                 .roles(user.getRoles().stream()
-                    .map(role -> "ROLE_" + role.getName())
-                    .collect(Collectors.toList()))
-                .expiresAt(jwtUtil.extractExpiration(token))
+                    .map(Role::getName)
+                    .collect(Collectors.toSet()))
                 .build();
         } catch (AuthenticationException e) {
-            log.error("Authentication failed for user: {}", username, e);
-            throw new AuthenticationException("Invalid username or password") {};
+            throw new AuthenticationException("Invalid username or password");
         }
     }
 
     @Override
-    public UserDTO register(RegisterRequest request) {
+    public UserResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new AuthenticationException("Username already exists");
         }
@@ -96,11 +87,11 @@ public class AuthServiceImpl implements AuthService {
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         Role userRole = new Role();
-        userRole.setName("USER");
+        userRole.setName("ROLE_USER");
         user.setRoles(new HashSet<>(Collections.singleton(userRole)));
         user.setActive(true);
 
-        return userMapper.toDTO(userRepository.save(user));
+        return userMapper.toResponseDto(userRepository.save(user));
     }
 
     @Override
@@ -121,16 +112,15 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findById(verifiedToken.getUserId())
             .orElseThrow(() -> new TokenRefreshException("User not found"));
             
-        String jwt = jwtUtil.generateToken(user);
+        String token = jwtUtil.generateToken(user);
         
         return AuthResponse.builder()
-            .token(jwt)
+            .token(token)
             .refreshToken(verifiedToken.getToken())
-            .user(userMapper.toDTO(user))
-            .roles(user.getRoles().stream().map(Role::getName).collect(Collectors.toList()))
-            .expiresAt(jwtUtil.extractExpiration(jwt))
-            .success(true)
-            .message("Token refreshed successfully")
+            .username(user.getUsername())
+            .roles(user.getRoles().stream()
+                .map(Role::getName)
+                .collect(Collectors.toSet()))
             .build();
     }
 

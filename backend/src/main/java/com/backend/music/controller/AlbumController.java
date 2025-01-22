@@ -1,12 +1,9 @@
 package com.backend.music.controller;
 
-import com.backend.music.dto.AlbumDTO;
-import com.backend.music.dto.ApiResponse;
-import com.backend.music.dto.AlbumCreateDTO;
-import com.backend.music.dto.SongDTO;
+import com.backend.music.dto.request.AlbumRequest;
+import com.backend.music.dto.response.AlbumResponse;
+import com.backend.music.dto.response.ApiResponse;
 import com.backend.music.service.AlbumService;
-import com.backend.music.service.SongService;
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -14,7 +11,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,68 +18,82 @@ import org.springframework.web.multipart.MultipartFile;
 public class AlbumController {
     
     private final AlbumService albumService;
-    private final SongService songService;
     
     @GetMapping("/albums")
-    public ResponseEntity<Page<AlbumDTO>> getAllAlbums(Pageable pageable) {
-        return ResponseEntity.ok(albumService.getAllAlbums(pageable));
+    public ResponseEntity<ApiResponse<Page<AlbumResponse>>> getAllAlbums(Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.<Page<AlbumResponse>>builder()
+            .success(true)
+            .data(albumService.getAllAlbums(pageable))
+            .build());
     }
     
     @GetMapping("/albums/search")
-    public ResponseEntity<Page<AlbumDTO>> searchAlbums(
+    public ResponseEntity<ApiResponse<Page<AlbumResponse>>> searchAlbums(
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String artist,
             @RequestParam(required = false) Integer year,
             Pageable pageable) {
+        Page<AlbumResponse> result;
         if (title != null) {
-            return ResponseEntity.ok(albumService.searchByTitle(title, pageable));
+            result = albumService.searchByTitle(title, pageable);
         } else if (artist != null) {
-            return ResponseEntity.ok(albumService.searchByArtist(artist, pageable));
+            result = albumService.searchByArtist(artist, pageable);
         } else if (year != null) {
-            return ResponseEntity.ok(albumService.filterByYear(year, pageable));
+            result = albumService.filterByYear(year, pageable);
+        } else {
+            result = albumService.getAllAlbums(pageable);
         }
-        return ResponseEntity.ok(albumService.getAllAlbums(pageable));
+        return ResponseEntity.ok(ApiResponse.<Page<AlbumResponse>>builder()
+            .success(true)
+            .data(result)
+            .build());
     }
     
     @GetMapping("/albums/{id}")
-    public ResponseEntity<AlbumDTO> getAlbumById(@PathVariable String id) {
-        return ResponseEntity.ok(albumService.getAlbumById(id));
+    public ResponseEntity<ApiResponse<AlbumResponse>> getAlbumById(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.<AlbumResponse>builder()
+            .success(true)
+            .data(albumService.getAlbumById(id))
+            .build());
     }
     
     @PostMapping("/albums")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<AlbumDTO>> createAlbum(@Valid @RequestBody AlbumCreateDTO albumDTO) {
-        return ResponseEntity.ok(ApiResponse.success(
-            "Album created successfully",
-            albumService.createAlbum(albumDTO)
-        ));
+    public ResponseEntity<ApiResponse<AlbumResponse>> createAlbum(@Valid @ModelAttribute AlbumRequest request) {
+        return ResponseEntity.ok(ApiResponse.<AlbumResponse>builder()
+            .success(true)
+            .data(albumService.createAlbum(request))
+            .build());
     }
     
     @PutMapping("/albums/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<AlbumDTO> updateAlbum(@PathVariable String id, @RequestBody AlbumDTO albumDTO) {
-        return ResponseEntity.ok(albumService.updateAlbum(id, albumDTO));
+    public ResponseEntity<ApiResponse<AlbumResponse>> updateAlbum(
+            @PathVariable String id,
+            @Valid @ModelAttribute AlbumRequest request) {
+        return ResponseEntity.ok(ApiResponse.<AlbumResponse>builder()
+            .success(true)
+            .data(albumService.updateAlbum(id, request))
+            .build());
     }
     
     @DeleteMapping("/albums/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteAlbum(@PathVariable String id) {
+    public ResponseEntity<ApiResponse<Void>> deleteAlbum(@PathVariable String id) {
         albumService.deleteAlbum(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+            .success(true)
+            .build());
     }
-
-    @PostMapping("/{albumId}/songs")
+    
+    @PostMapping("/albums/{albumId}/songs/{songId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<SongDTO>> addSongToAlbum(
+    public ResponseEntity<ApiResponse<AlbumResponse>> addSongToAlbum(
             @PathVariable String albumId,
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("title") String title,
-            @RequestParam("artist") String artist) {
-        
-        SongDTO song = songService.uploadSong(file, title, artist, albumId);
-        return ResponseEntity.ok(ApiResponse.success(
-            "Song added to album successfully",
-            song
-        ));
+            @PathVariable String songId) {
+        return ResponseEntity.ok(ApiResponse.<AlbumResponse>builder()
+            .success(true)
+            .data(albumService.addSongToAlbum(albumId, songId))
+            .build());
     }
 } 
