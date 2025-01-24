@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
-import { AuthGuard } from './core/auth/guards/auth.guard';
-import { AdminGuard } from './core/auth/guards/admin.guard';
+import { AuthGuard } from './core/guards/auth.guard';
+import { AdminGuard } from './core/guards/admin.guard';
 import { AlbumListComponent } from './features/admin/albums/components/album-list/album-list.component';
 import { AlbumFormComponent } from './features/admin/albums/components/album-form/album-form.component';
 

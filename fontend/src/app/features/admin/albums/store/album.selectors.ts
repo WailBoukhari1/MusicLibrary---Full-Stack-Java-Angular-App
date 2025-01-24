@@ -18,12 +18,12 @@ export const selectTotalElements = createSelector(
   (state) => state.totalElements
 );
 
-export const selectLoading = createSelector(
+export const selectAlbumLoading = createSelector(
   selectAlbumState,
   (state) => state.loading
 );
 
-export const selectError = createSelector(
+export const selectAlbumError = createSelector(
   selectAlbumState,
   (state) => state.error
 ); 

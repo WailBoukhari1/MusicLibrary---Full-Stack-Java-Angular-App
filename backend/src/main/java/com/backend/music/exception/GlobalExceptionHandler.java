@@ -1,6 +1,8 @@
 package com.backend.music.exception;
 
-import com.backend.music.dto.response.ApiResponse;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -13,8 +15,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.backend.music.dto.response.ApiResponse;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -65,27 +66,31 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiResponse<?> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationExceptions(
+            MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach(error -> {
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
             String fieldName = ((FieldError) error).getField();
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
-        return ApiResponse.builder()
-            .success(false)
-            .error("Validation failed")
-            .data(errors)
-            .build();
+        
+        return ResponseEntity.badRequest().body(
+            ApiResponse.<Map<String, String>>builder()
+                .success(false)
+                .error("Validation failed")
+                .data(errors)
+                .build()
+        );
     }
 
     @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ApiResponse<?> handleGlobalException(Exception ex) {
-        return ApiResponse.builder()
-            .success(false)
-            .error("An unexpected error occurred: " + ex.getMessage())
-            .build();
+    public ResponseEntity<ApiResponse<Void>> handleAllExceptions(Exception ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(ApiResponse.<Void>builder()
+                .success(false)
+                .error(ex.getMessage())
+                .build()
+            );
     }
 } 

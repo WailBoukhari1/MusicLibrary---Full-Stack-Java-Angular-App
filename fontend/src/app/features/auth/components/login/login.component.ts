@@ -8,8 +8,8 @@ import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { AuthActions } from '../../../core/auth/store/auth.actions';
-import { selectAuthError, selectAuthLoading } from '../../../core/auth/store/auth.selectors';
+import { AuthActions } from '../../store/auth.actions';
+import { selectAuthError, selectAuthLoading } from '../../store/auth.selectors';
 
 @Component({
   selector: 'app-login',
@@ -124,7 +124,9 @@ export class LoginComponent {
   onSubmit(): void {
     if (this.loginForm.valid) {
       const { username, password } = this.loginForm.value;
-      this.store.dispatch(AuthActions.loginRequest({ username, password }));
+      this.store.dispatch(AuthActions.loginRequest({ 
+        request: { username, password } 
+      }));
     }
   }
 } 

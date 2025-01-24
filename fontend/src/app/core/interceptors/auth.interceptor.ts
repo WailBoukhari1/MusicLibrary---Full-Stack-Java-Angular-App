@@ -1,7 +1,7 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Store } from '@ngrx/store';
-import { AuthActions } from '../store/auth.actions';
+import { AuthActions } from '../../features/auth/store/auth.actions';
 import { catchError } from 'rxjs/operators';
 import { throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';

@@ -1,5 +1,5 @@
-import { createActionGroup, props } from '@ngrx/store';
-import { Album } from '../../../../core/models/album.model';
+import { createActionGroup, props, emptyProps } from '@ngrx/store';
+import { Album } from '../models/album.model';
 
 export const AlbumActions = createActionGroup({
   source: 'Album',
@@ -15,11 +15,11 @@ export const AlbumActions = createActionGroup({
     'Load Albums Failure': props<{ error: string }>(),
 
     'Create Album': props<{ album: FormData }>(),
-    'Create Album Success': props<{ album: Album | undefined }>(),
+    'Create Album Success': props<{ album: Album }>(),
     'Create Album Failure': props<{ error: string }>(),
 
     'Update Album': props<{ id: string; album: FormData }>(),
-    'Update Album Success': props<{ album: Album | undefined }>(),
+    'Update Album Success': props<{ album: Album }>(),
     'Update Album Failure': props<{ error: string }>(),
 
     'Delete Album': props<{ id: string }>(),
@@ -30,6 +30,9 @@ export const AlbumActions = createActionGroup({
 
     'Load Album': props<{ id: string }>(),
     'Load Album Success': props<{ album: Album }>(),
-    'Load Album Failure': props<{ error: string }>()
+    'Load Album Failure': props<{ error: string }>(),
+
+    'Set Error': props<{ error: string }>(),
+    'Clear Error': emptyProps(),
   }
 }); 

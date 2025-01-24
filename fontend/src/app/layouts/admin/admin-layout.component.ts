@@ -8,7 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { Store } from '@ngrx/store';
-import { AuthActions } from '../../core/auth/store/auth.actions';
+import { AuthActions } from '../../features/auth/store/auth.actions';
 
 @Component({
   selector: 'app-admin-layout',

@@ -8,8 +8,8 @@ import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { AuthActions } from '../../../core/auth/store/auth.actions';
-import { selectAuthError, selectAuthLoading } from '../../../core/auth/store/auth.selectors';
+import { AuthActions } from '../../store/auth.actions';
+import { selectAuthError, selectAuthLoading } from '../../store/auth.selectors';
 
 @Component({
   selector: 'app-register',
@@ -139,7 +139,9 @@ export class RegisterComponent {
   onSubmit(): void {
     if (this.registerForm.valid) {
       const { username, email, password } = this.registerForm.value;
-      this.store.dispatch(AuthActions.registerRequest({ username, email, password }));
+      this.store.dispatch(AuthActions.registerRequest({ 
+        request: { username, email, password } 
+      }));
     }
   }
 } 

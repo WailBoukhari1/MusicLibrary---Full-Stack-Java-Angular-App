@@ -2,8 +2,7 @@ import { Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { AuthService } from '../services/auth.service';
 import { AuthActions } from './auth.actions';
-import { catchError, map, mergeMap, tap } from 'rxjs/operators';
-import { of, defer } from 'rxjs';
+import { catchError, map, mergeMap, of, tap, defer } from 'rxjs';
 import { Router } from '@angular/router';
 
 @Injectable()
@@ -11,27 +10,27 @@ export class AuthEffects {
   login$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AuthActions.loginRequest),
-      mergeMap(({ username, password }) =>
-        this.authService.login(username, password).pipe(
+      mergeMap(({ request }) =>
+        this.authService.login(request.username, request.password).pipe(
           map(response => {
             if (response.success && response.data) {
               return AuthActions.loginSuccess({ 
                 user: {
-                  id: '',
+                  id: response.data.id,
                   username: response.data.username,
-                  email: '',
+                  email: response.data.email,
                   roles: response.data.roles,
-                  active: true
+                  active: response.data.active,
+                  createdAt: response.data.createdAt,
+                  updatedAt: response.data.updatedAt
                 },
                 token: response.data.token,
-                refreshToken: response.data.refreshToken
+                refreshToken: response.data.refreshToken 
               });
             }
-            throw new Error(response.error || 'Login failed');
+            throw new Error('Login failed');
           }),
-          catchError(error => of(AuthActions.loginFailure({ 
-            error: error.error?.message || error.message || 'Login failed' 
-          })))
+          catchError(error => of(AuthActions.loginFailure({ error: error.message })))
         )
       )
     )
@@ -41,12 +40,7 @@ export class AuthEffects {
     () =>
       this.actions$.pipe(
         ofType(AuthActions.loginSuccess),
-        tap(({ token, refreshToken, user }) => {
-          localStorage.setItem('token', token);
-          localStorage.setItem('refreshToken', refreshToken);
-          const redirectUrl = user.roles.includes('ADMIN') ? '/admin/dashboard' : '/user/library';
-          this.router.navigate([redirectUrl]);
-        })
+        tap(() => this.router.navigate(['/']))
       ),
     { dispatch: false }
   );
@@ -54,17 +48,15 @@ export class AuthEffects {
   register$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AuthActions.registerRequest),
-      mergeMap(({ username, email, password }) =>
-        this.authService.register(username, email, password).pipe(
+      mergeMap(({ request }) =>
+        this.authService.register(request.username, request.email, request.password).pipe(
           map(response => {
             if (response.success && response.data) {
               return AuthActions.registerSuccess({ user: response.data });
             }
-            throw new Error(response.error || 'Registration failed');
+            throw new Error('Registration failed');
           }),
-          catchError(error => of(AuthActions.registerFailure({ 
-            error: error.error?.message || error.message || 'Registration failed' 
-          })))
+          catchError(error => of(AuthActions.registerFailure({ error: error.message })))
         )
       )
     )
@@ -88,7 +80,7 @@ export class AuthEffects {
 
   getCurrentUser$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(AuthActions.getCurrentUserRequest),
+      ofType(AuthActions.getCurrentUser),
       mergeMap(() =>
         this.authService.getCurrentUser().pipe(
           map(response => {
@@ -118,7 +110,9 @@ export class AuthEffects {
                   username: response.data.username,
                   email: '',
                   roles: response.data.roles,
-                  active: true
+                  active: true,
+                  createdAt: new Date(),
+                  updatedAt: new Date()
                 },
                 token: response.data.token,
                 refreshToken: response.data.refreshToken
@@ -159,7 +153,9 @@ export class AuthEffects {
                       username: response.data.username,
                       email: '',
                       roles: response.data.roles,
-                      active: true
+                      active: true,
+                      createdAt: new Date(),
+                      updatedAt: new Date()
                     },
                     token: response.data.token,
                     refreshToken: response.data.refreshToken
@@ -176,7 +172,8 @@ export class AuthEffects {
         );
       }
       return of(AuthActions.logoutSuccess());
-    })
+    }),
+    { dispatch: true }
   );
 
   constructor(

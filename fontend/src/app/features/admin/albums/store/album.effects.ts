@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
 import { AlbumActions } from './album.actions';
 import { AlbumService } from '../services/album.service';
 import { Page } from '../../../../core/models/page.model';
-import { Album } from '../../../../core/models/album.model';
+import { Album } from '../models/album.model';
 import { ApiResponse } from '../../../../core/models/api-response.model';
 
 @Injectable()
@@ -37,8 +37,15 @@ export class AlbumEffects {
       ofType(AlbumActions.createAlbum),
       mergeMap(({ album }) =>
         this.albumService.createAlbum(album).pipe(
-          map(response => AlbumActions.createAlbumSuccess({ album: response.data })),
-          catchError(error => of(AlbumActions.createAlbumFailure({ error: error.message })))
+          map(response => {
+            if (response.success && response.data) {
+              return AlbumActions.createAlbumSuccess({ album: response.data });
+            }
+            throw new Error('Failed to create album: No data received');
+          }),
+          catchError(error => of(AlbumActions.createAlbumFailure({ 
+            error: error.message || 'Failed to create album'
+          })))
         )
       )
     )
@@ -49,8 +56,15 @@ export class AlbumEffects {
       ofType(AlbumActions.updateAlbum),
       mergeMap(({ id, album }) =>
         this.albumService.updateAlbum(id, album).pipe(
-          map(response => AlbumActions.updateAlbumSuccess({ album: response.data })),
-          catchError(error => of(AlbumActions.updateAlbumFailure({ error: error.message })))
+          map(response => {
+            if (response.success && response.data) {
+              return AlbumActions.updateAlbumSuccess({ album: response.data });
+            }
+            throw new Error('Failed to update album: No data received');
+          }),
+          catchError(error => of(AlbumActions.updateAlbumFailure({ 
+            error: error.message || 'Failed to update album'
+          })))
         )
       )
     )
@@ -82,8 +96,21 @@ export class AlbumEffects {
     );
   });
 
+  // Add navigation effects
+  albumSuccess$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(
+        AlbumActions.createAlbumSuccess,
+        AlbumActions.updateAlbumSuccess
+      ),
+      tap(() => this.router.navigate(['/admin/albums']))
+    ),
+    { dispatch: false }
+  );
+
   constructor(
     private actions$: Actions,
-    private albumService: AlbumService
+    private albumService: AlbumService,
+    private router: Router
   ) {}
 } 

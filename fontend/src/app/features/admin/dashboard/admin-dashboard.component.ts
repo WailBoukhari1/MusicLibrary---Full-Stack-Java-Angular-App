@@ -4,8 +4,8 @@ import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { AuthService } from '../../../core/auth/services/auth.service';
-import { UserModel } from '../../../core/auth/models/user.model';
+import { AuthService } from '../../auth/services/auth.service';
+import { User } from '../../admin/users/models/user.model';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -104,7 +104,7 @@ import { UserModel } from '../../../core/auth/models/user.model';
   `]
 })
 export class AdminDashboardComponent implements OnInit {
-  currentUser: UserModel | null = null;
+  currentUser: User | null = null;
 
   constructor(private authService: AuthService) {}
 

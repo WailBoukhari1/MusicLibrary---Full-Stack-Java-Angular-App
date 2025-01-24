@@ -3,17 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
-import { UserModel } from '../models/user.model';
+import { User } from '../../admin/users/models/user.model';
 import { ApiResponse, AuthResponse, LoginRequest, RegisterRequest } from '../models/auth.model';
 import { JwtHelperService } from '@auth0/angular-jwt';
-
-export interface User {
-  id: number;
-  email: string;
-  username: string;
-  role: 'ADMIN' | 'USER';
-  roles?: string[];
-}
 
 @Injectable({
   providedIn: 'root'
@@ -37,11 +29,13 @@ export class AuthService {
     if (token) {
       const decodedToken = this.jwtHelper.decodeToken(token);
       const user: User = {
-        id: 0,
+        id: '0',
         username: decodedToken.sub,
         email: '',
-        role: decodedToken.roles?.includes('ADMIN') ? 'ADMIN' : 'USER',
-        roles: decodedToken.roles || []
+        roles: decodedToken.roles || [],
+        active: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
       this.currentUserSubject.next(user);
     }
@@ -60,18 +54,20 @@ export class AuthService {
       );
   }
 
-  register(username: string, email: string, password: string): Observable<ApiResponse<UserModel>> {
+  register(username: string, email: string, password: string): Observable<ApiResponse<User>> {
     const request: RegisterRequest = { username, email, password };
-    return this.http.post<ApiResponse<UserModel>>(`${this.apiUrl}/register`, request);
+    return this.http.post<ApiResponse<User>>(`${this.apiUrl}/register`, request);
   }
 
   private handleAuthResponse(response: AuthResponse): void {
     const user: User = {
-      id: 0,
+      id: response.id,
       username: response.username,
-      email: '',
-      role: response.roles.includes('ADMIN') ? 'ADMIN' : 'USER',
-      roles: response.roles
+      email: response.email,
+      roles: response.roles,
+      active: response.active,
+      createdAt: response.createdAt,
+      updatedAt: response.updatedAt
     };
     this.currentUserSubject.next(user);
     this.redirectBasedOnRole(response.roles.includes('ADMIN'));
@@ -113,8 +109,8 @@ export class AuthService {
     return user?.roles?.includes('ADMIN') || false;
   }
 
-  getCurrentUser(): Observable<ApiResponse<UserModel>> {
-    return this.http.get<ApiResponse<UserModel>>(`${this.apiUrl}/me`);
+  getCurrentUser(): Observable<ApiResponse<User>> {
+    return this.http.get<ApiResponse<User>>(`${this.apiUrl}/me`);
   }
 
   validateToken(): Observable<ApiResponse<boolean>> {

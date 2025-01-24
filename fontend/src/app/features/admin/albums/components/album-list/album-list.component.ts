@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
-import { Album } from '../../../../../core/models/album.model';
+import { Album } from '../../models/album.model';
 import { AlbumActions } from '../../store/album.actions';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -12,6 +12,8 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { Router } from '@angular/router';
 import { selectAlbums, selectTotalElements } from '../../store/album.selectors';
 import { environment } from '../../../../../../environments/environment';
+import { ActivatedRoute } from '@angular/router';
+import { Page } from '../../../../../core/models/page.model';
 
 @Component({
   selector: 'app-album-list',
@@ -116,11 +118,20 @@ export class AlbumListComponent implements OnInit {
 
   constructor(
     private store: Store,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit() {
-    this.loadAlbums();
+    this.route.data.subscribe(data => {
+      if (data['albumsData'].success) {
+        const pageData: Page<Album> = data['albumsData'].data;
+        this.albums$ = this.store.select(selectAlbums, { page: pageData.number, size: pageData.size });
+        this.totalElements$ = this.store.select(selectTotalElements, { page: pageData.number, size: pageData.size });
+        this.pageSize = pageData.size;
+        this.currentPage = pageData.number;
+      }
+    });
   }
 
   loadAlbums() {

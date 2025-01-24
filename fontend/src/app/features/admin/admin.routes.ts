@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
-import { AuthGuard } from '../../core/auth/guards/auth.guard';
-import { AdminGuard } from '../../core/auth/guards/admin.guard';
+import { AuthGuard } from '../../core/guards/auth.guard';
+import { AdminGuard } from '../../core/guards/admin.guard';
 import { AlbumListComponent } from './albums/components/album-list/album-list.component';
 import { AlbumFormComponent } from './albums/components/album-form/album-form.component';
 import { AlbumListResolver } from './albums/resolvers/album-list.resolver';
@@ -24,7 +24,7 @@ export const ADMIN_ROUTES: Routes = [
             path: '',
             component: AlbumListComponent,
             resolve: {
-              albums: AlbumListResolver
+              albumsData: AlbumListResolver
             }
           },
           {
@@ -38,7 +38,7 @@ export const ADMIN_ROUTES: Routes = [
             path: 'edit/:id',
             component: AlbumFormComponent,
             resolve: {
-              album: AlbumDetailResolver,
+              albumData: AlbumDetailResolver,
               enums: AlbumEnumResolver
             }
           }

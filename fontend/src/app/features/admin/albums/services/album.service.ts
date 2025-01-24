@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
-import { Album } from '../../../../core/models/album.model';
+import { Album } from '../models/album.model';
 import { ApiResponse } from '../../../../core/models/api-response.model';
 import { Page } from '../../../../core/models/page.model';
 import { filter, map } from 'rxjs/operators';
@@ -20,9 +20,9 @@ export class AlbumService {
     return new HttpHeaders().set('Authorization', `Bearer ${token}`);
   }
 
-  getAlbums(page: number, size: number): Observable<ApiResponse<Page<Album>>> {
-    return this.http.get<ApiResponse<Page<Album>>>(`${this.apiUrl}?page=${page}&size=${size}`, {
-      headers: this.getHeaders()
+  getAlbums(page: number = 0, size: number = 10): Observable<ApiResponse<Page<Album>>> {
+    return this.http.get<ApiResponse<Page<Album>>>(`${this.apiUrl}`, {
+      params: { page: page.toString(), size: size.toString() }
     });
   }
 
@@ -44,7 +44,7 @@ export class AlbumService {
     });
   }
 
-  getAlbum(id: number) {
-    return this.http.get<ApiResponse<Album>>(`${this.apiUrl}/albums/${id}`);
+  getAlbum(id: number | string): Observable<ApiResponse<Album>> {
+    return this.http.get<ApiResponse<Album>>(`${this.apiUrl}/${id}`);
   }
 }
