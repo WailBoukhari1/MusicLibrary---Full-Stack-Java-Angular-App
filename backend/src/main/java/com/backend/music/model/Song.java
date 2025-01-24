@@ -1,7 +1,6 @@
 package com.backend.music.model;
 
-import java.util.ArrayList;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.annotation.Id;
@@ -43,12 +42,8 @@ public class Song {
     @DBRef
     private Album album;
     
-    @Builder.Default
-    private List<String> categories = new ArrayList<>();
+    private List<String> categories;
     
-    @Builder.Default
-    private Date createdAt = new Date();
-    
-    @Builder.Default
-    private Date updatedAt = new Date();
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 } 

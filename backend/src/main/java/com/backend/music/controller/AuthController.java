@@ -2,6 +2,7 @@ package com.backend.music.controller;
 
 import com.backend.music.dto.request.LoginRequest;
 import com.backend.music.dto.request.RegisterRequest;
+import com.backend.music.dto.request.RefreshTokenRequest;
 import com.backend.music.dto.response.ApiResponse;
 import com.backend.music.dto.response.AuthResponse;
 import com.backend.music.dto.response.UserResponse;
@@ -39,8 +40,8 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout(@RequestHeader("Authorization") String token) {
-        authService.logout(token.substring(7));
+    public ResponseEntity<ApiResponse<Void>> logout(@RequestBody RefreshTokenRequest request) {
+        authService.logout(request.getRefreshToken());
         return ResponseEntity.ok(ApiResponse.<Void>builder()
             .success(true)
             .build());
@@ -64,13 +65,13 @@ public class AuthController {
             .build());
     }
 
-    // @GetMapping("/me")
-    // public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser(@RequestHeader("Authorization") String token) {
-    //     String username = authService.extractUsername(token.substring(7));
-    //     UserResponse user = userService.getUserByUsername(username);
-    //     return ResponseEntity.ok(ApiResponse.<UserResponse>builder()
-    //         .success(true)
-    //         .data(user)
-    //         .build());
-    // }
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser(@RequestHeader("Authorization") String token) {
+        String username = authService.extractUsername(token.substring(7));
+        UserResponse user = userService.getUserByUsername(username);
+        return ResponseEntity.ok(ApiResponse.<UserResponse>builder()
+            .success(true)
+            .data(user)
+            .build());
+    }
 } 

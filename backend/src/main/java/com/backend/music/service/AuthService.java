@@ -11,4 +11,5 @@ public interface AuthService {
     boolean validateToken(String token);
     AuthResponse refreshToken(String refreshToken);
     void logout(String token);
+    String extractUsername(String token);
 } 

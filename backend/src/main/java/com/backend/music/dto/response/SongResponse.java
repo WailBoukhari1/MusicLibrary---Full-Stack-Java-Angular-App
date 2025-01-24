@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.backend.music.model.enums.Category;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -23,7 +25,7 @@ public class SongResponse {
     private AlbumResponse album;
     
     @Builder.Default
-    private List<CategoryResponse> categories = new ArrayList<>();
+    private List<Category> categories = new ArrayList<>();
     
     private Date createdAt;
     private Date updatedAt;

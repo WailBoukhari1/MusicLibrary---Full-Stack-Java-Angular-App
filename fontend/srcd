@@ -1,0 +1,127 @@
+src/
+├── app/
+│   ├── core/
+│   │   ├── auth/
+│   │   │   ├── guards/
+│   │   │   │   ├── auth.guard.ts
+│   │   │   │   └── admin.guard.ts
+│   │   │   ├── interceptors/
+│   │   │   │   └── auth.interceptor.ts
+│   │   │   └── services/
+│   │   │       └── auth.service.ts
+│   │   ├── layout/
+│   │   │   ├── admin-layout/
+│   │   │   │   ├── admin-layout.component.ts
+│   │   │   │   ├── admin-sidebar.component.ts
+│   │   │   │   └── admin-navbar.component.ts
+│   │   │   └── user-layout/
+│   │   │       ├── user-layout.component.ts
+│   │   │       ├── user-sidebar.component.ts
+│   │   │       └── user-navbar.component.ts
+│   │   ├── services/
+│   │   │   ├── api.service.ts
+│   │   │   ├── audio.service.ts
+│   │   │   ├── notification.service.ts
+│   │   │   └── enum.service.ts        # New: for categories/genres
+│   │   └── utils/
+│   │       ├── validators.ts
+│   │       └── helpers.ts
+│   │
+│   ├── features/
+│   │   ├── admin/
+│   │   │   ├── dashboard/
+│   │   │   │   ├── admin-dashboard.component.ts
+│   │   │   │   └── admin-dashboard.resolver.ts
+│   │   │   ├── albums/
+│   │   │   │   ├── components/
+│   │   │   │   │   ├── album-list/
+│   │   │   │   │   └── album-form/
+│   │   │   │   ├── resolvers/
+│   │   │   │   │   ├── album-list.resolver.ts
+│   │   │   │   │   └── album-detail.resolver.ts
+│   │   │   │   └── state/
+│   │   │   │       ├── admin-albums.actions.ts
+│   │   │   │       ├── admin-albums.effects.ts
+│   │   │   │       ├── admin-albums.reducer.ts
+│   │   │   │       └── admin-albums.selectors.ts
+│   │   │   ├── songs/
+│   │   │   │   ├── components/
+│   │   │   │   │   ├── song-list/
+│   │   │   │   │   └── song-form/
+│   │   │   │   ├── resolvers/
+│   │   │   │   │   ├── song-list.resolver.ts
+│   │   │   │   │   └── song-detail.resolver.ts
+│   │   │   │   └── state/
+│   │   │   │       └── ... (same as albums)
+│   │   │   ├── users/
+│   │   │   │   ├── components/
+│   │   │   │   │   ├── user-list/
+│   │   │   │   │   └── user-form/
+│   │   │   │   ├── resolvers/
+│   │   │   │   │   ├── user-list.resolver.ts
+│   │   │   │   │   └── user-detail.resolver.ts
+│   │   │   │   └── state/
+│   │   │   │       └── ... (same as albums)
+│   │   │   └── state/
+│   │   │       └── admin.reducer.ts
+│   │   │
+│   │   ├── user/
+│   │   │   ├── dashboard/
+│   │   │   │   ├── user-dashboard.component.ts
+│   │   │   │   └── user-dashboard.resolver.ts
+│   │   │   ├── library/
+│   │   │   │   ├── user-library.component.ts
+│   │   │   │   └── user-library.resolver.ts
+│   │   │   ├── profile/
+│   │   │   │   ├── user-profile.component.ts
+│   │   │   │   └── user-profile.resolver.ts
+│   │   │   └── state/
+│   │   │       └── user.reducer.ts
+│   │   │
+│   │   ├── player/
+│   │   │   ├── components/
+│   │   │   │   ├── audio-player/
+│   │   │   │   └── player-controls/
+│   │   │   └── state/
+│   │   │       ├── player.actions.ts
+│   │   │       ├── player.effects.ts
+│   │   │       ├── player.reducer.ts
+│   │   │       └── player.selectors.ts
+│   │   │
+│   │   └── auth/
+│   │       ├── login/
+│   │       ├── register/
+│   │       └── state/
+│   │           └── ... (auth state management)
+│   │
+│   ├── shared/
+│   │   ├── components/
+│   │   │   ├── data-table/
+│   │   │   ├── pagination/
+│   │   │   ├── search-bar/
+│   │   │   ├── confirmation-dialog/
+│   │   │   ├── file-upload/
+│   │   │   └── category-genre-selector/  # New component
+│   │   ├── models/
+│   │   │   ├── album.model.ts
+│   │   │   ├── song.model.ts
+│   │   │   ├── user.model.ts
+│   │   │   ├── api-response.model.ts
+│   │   │   └── enums.model.ts           # New: for Category/Genre
+│   │   ├── directives/
+│   │   │   └── role.directive.ts
+│   │   └── pipes/
+│   │       ├── duration.pipe.ts
+│   │       └── file-size.pipe.ts
+│   │
+│   ├── app.config.ts
+│   ├── app.routes.ts
+│   └── app.component.ts
+│
+├── assets/
+│   ├── audio/
+│   ├── images/
+│   └── styles/
+│
+├── environments/
+└── styles.scss

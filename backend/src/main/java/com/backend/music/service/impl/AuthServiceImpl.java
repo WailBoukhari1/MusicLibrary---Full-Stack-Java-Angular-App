@@ -60,13 +60,21 @@ public class AuthServiceImpl implements AuthService {
             User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
                 
+            // Store refresh token
+            RefreshToken refreshTokenEntity = new RefreshToken();
+            refreshTokenEntity.setUserId(user.getId());
+            refreshTokenEntity.setToken(refreshToken);
+            refreshTokenEntity.setExpiryDate(jwtUtil.extractExpiration(refreshToken).toInstant());
+            refreshTokenService.save(refreshTokenEntity);
+            
             return AuthResponse.builder()
                 .token(token)
                 .refreshToken(refreshToken)
                 .username(user.getUsername())
                 .roles(user.getRoles().stream()
                     .map(Role::getName)
-                    .collect(Collectors.toSet()))
+                    .map(role -> role.replace("ROLE_", ""))
+                    .collect(Collectors.toList()))
                 .build();
         } catch (AuthenticationException e) {
             throw new AuthenticationException("Invalid username or password");
@@ -120,13 +128,18 @@ public class AuthServiceImpl implements AuthService {
             .username(user.getUsername())
             .roles(user.getRoles().stream()
                 .map(Role::getName)
-                .collect(Collectors.toSet()))
+                .map(role -> role.replace("ROLE_", ""))
+                .collect(Collectors.toList()))
             .build();
     }
-
     @Override
-    public void logout(String token) {
-        refreshTokenService.revokeRefreshToken(token);
-        tokenBlacklistService.blacklistToken(token, jwtUtil.extractExpiration(token).getTime());
+    public String extractUsername(String token) {
+        return jwtUtil.extractUsername(token);
+    }
+    @Override
+    public void logout(String refreshToken) {
+        RefreshToken token = refreshTokenService.findByToken(refreshToken)
+            .orElseThrow(() -> new TokenRefreshException("Refresh token not found"));
+        refreshTokenService.deleteByToken(refreshToken);
     }
 } 
