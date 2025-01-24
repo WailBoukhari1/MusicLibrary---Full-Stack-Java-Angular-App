@@ -1,16 +1,18 @@
 package com.backend.music.mapper;
 
-import com.backend.music.dto.request.RegisterRequest;
-import com.backend.music.dto.response.UserResponse;
-import com.backend.music.model.User;
-import com.backend.music.model.Role;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.mapstruct.NullValuePropertyMappingStrategy;
-import java.util.Set;
-import java.util.stream.Collectors;
+
+import com.backend.music.dto.request.RegisterRequest;
+import com.backend.music.dto.response.UserResponse;
+import com.backend.music.model.Role;
+import com.backend.music.model.User;
 
 @Mapper(
     componentModel = "spring",

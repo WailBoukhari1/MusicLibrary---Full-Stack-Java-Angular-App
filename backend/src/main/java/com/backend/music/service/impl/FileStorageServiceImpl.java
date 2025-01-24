@@ -1,10 +1,18 @@
 package com.backend.music.service.impl;
 
-import com.backend.music.service.FileStorageService;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.UUID;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.mp3.Mp3Parser;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -14,14 +22,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.UUID;
+import com.backend.music.config.FileStorageConfig;
+import com.backend.music.service.FileStorageService;
 
 @Service
 public class FileStorageServiceImpl implements FileStorageService {
@@ -29,10 +31,10 @@ public class FileStorageServiceImpl implements FileStorageService {
     private final Path fileStorageLocation;
     private final String baseUrl;
 
-    public FileStorageServiceImpl(
-            @Value("${file.upload-dir:uploads}") String uploadDir,
+    @Autowired
+    public FileStorageServiceImpl(FileStorageConfig fileStorageConfig,
             @Value("${app.base-url:http://localhost:8080}") String baseUrl) {
-        this.fileStorageLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
+        this.fileStorageLocation = fileStorageConfig.getFileStorageLocation();
         this.baseUrl = baseUrl;
         try {
             Files.createDirectories(this.fileStorageLocation);
@@ -48,7 +50,7 @@ public class FileStorageServiceImpl implements FileStorageService {
         }
 
         String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
-        String fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
+        String fileExtension = getFileExtension(originalFileName);
         String fileName = UUID.randomUUID().toString() + fileExtension;
 
         try {
@@ -122,5 +124,11 @@ public class FileStorageServiceImpl implements FileStorageService {
         } catch (Exception e) {
             return 0;
         }
+    }
+
+    private String getFileExtension(String fileName) {
+        if (fileName == null) return "";
+        int lastDot = fileName.lastIndexOf('.');
+        return lastDot > 0 ? fileName.substring(lastDot) : "";
     }
 } 

@@ -86,4 +86,16 @@ public class RefreshTokenService {
         }
         return xfHeader.split(",")[0];
     }
+
+    public Optional<RefreshToken> findByToken(String token) {
+        return refreshTokenRepository.findByToken(token);
+    }
+
+    public RefreshToken save(RefreshToken token) {
+        return refreshTokenRepository.save(token);
+    }
+
+    public void deleteByToken(String token) {
+        refreshTokenRepository.deleteByToken(token);
+    }
 } 
