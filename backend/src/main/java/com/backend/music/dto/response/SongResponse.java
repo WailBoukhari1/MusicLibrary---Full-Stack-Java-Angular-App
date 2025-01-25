@@ -1,19 +1,9 @@
 package com.backend.music.dto.response;
 
 import lombok.Data;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
-import com.backend.music.model.enums.Category;
+import java.time.LocalDateTime;
 
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class SongResponse {
     private String id;
     private String title;
@@ -21,12 +11,9 @@ public class SongResponse {
     private Integer trackNumber;
     private String description;
     private String audioFileId;
+    private String imageFileId;
     private Integer duration;
-    private AlbumResponse album;
-    
-    @Builder.Default
-    private List<Category> categories = new ArrayList<>();
-    
-    private Date createdAt;
-    private Date updatedAt;
+    private String albumId;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 } 

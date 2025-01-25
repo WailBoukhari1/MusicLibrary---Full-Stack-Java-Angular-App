@@ -37,12 +37,12 @@ public class Song {
     private String description;
     
     private String audioFileId;
+    private String imageFileId;
+    
     private Integer duration;
     
     @DBRef
     private Album album;
-    
-    private List<String> categories;
     
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

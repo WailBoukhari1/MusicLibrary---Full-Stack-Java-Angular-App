@@ -22,7 +22,6 @@ export class AuthEffects {
                   roles: response.data.roles,
                   active: response.data.active,
                   createdAt: response.data.createdAt,
-                  updatedAt: response.data.updatedAt
                 },
                 token: response.data.token,
                 refreshToken: response.data.refreshToken 
@@ -112,7 +111,6 @@ export class AuthEffects {
                   roles: response.data.roles,
                   active: true,
                   createdAt: new Date(),
-                  updatedAt: new Date()
                 },
                 token: response.data.token,
                 refreshToken: response.data.refreshToken
@@ -155,7 +153,6 @@ export class AuthEffects {
                       roles: response.data.roles,
                       active: true,
                       createdAt: new Date(),
-                      updatedAt: new Date()
                     },
                     token: response.data.token,
                     refreshToken: response.data.refreshToken

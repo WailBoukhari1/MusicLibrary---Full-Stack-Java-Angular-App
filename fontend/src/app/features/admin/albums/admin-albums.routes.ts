@@ -1,18 +1,16 @@
 import { Routes } from '@angular/router';
-import { AlbumListComponent } from './album-list/album-list.component';
-import { AlbumFormComponent } from './album-form/album-form.component';
 
 export const ADMIN_ALBUM_ROUTES: Routes = [
   {
     path: '',
-    component: AlbumListComponent
+    loadComponent: () => import('./admin-albums.component').then(m => m.AdminAlbumsComponent)
   },
   {
-    path: 'new',
-    component: AlbumFormComponent
+    path: 'create',
+    loadComponent: () => import('./album-form/album-form.component').then(m => m.AlbumFormComponent)
   },
   {
     path: 'edit/:id',
-    component: AlbumFormComponent
+    loadComponent: () => import('./album-form/album-form.component').then(m => m.AlbumFormComponent)
   }
 ]; 

@@ -6,6 +6,7 @@ import { AlbumFormComponent } from './albums/album-form/album-form.component';
 import { AlbumListResolver } from '../../core/resolvers/album-list.resolver';
 import { AlbumDetailResolver } from '../../core/resolvers/album-detail.resolver';
 import { AlbumEnumResolver } from '../../core/resolvers/album-enum.resolver';
+import { adminGuard } from '../../core/guards/auth.guard';
 
 export const ADMIN_ROUTES: Routes = [
   {
@@ -19,29 +20,35 @@ export const ADMIN_ROUTES: Routes = [
       },
       {
         path: 'albums',
+        canActivate: [adminGuard],
         children: [
           {
             path: '',
-            component: AlbumListComponent,
-            resolve: {
-              albumsData: AlbumListResolver
-            }
+            loadChildren: () => import('./albums/admin-albums.routes')
+              .then(m => m.ADMIN_ALBUM_ROUTES)
           },
+        ]
+      },
+      {
+        path: 'songs',
+        canActivate: [adminGuard],
+        children: [
           {
-            path: 'new',
-            component: AlbumFormComponent,
-            resolve: {
-              enums: AlbumEnumResolver
-            }
+            path: '',
+            loadChildren: () => import('./songs/admin-songs.routes')
+              .then(m => m.ADMIN_SONG_ROUTES)
           },
+        ]
+      },
+      {
+        path: 'users',
+        canActivate: [adminGuard],
+        children: [
           {
-            path: 'edit/:id',
-            component: AlbumFormComponent,
-            resolve: {
-              albumData: AlbumDetailResolver,
-              enums: AlbumEnumResolver
-            }
-          }
+            path: '',
+            loadChildren: () => import('./users/admin-users.routes')
+              .then(m => m.ADMIN_USER_ROUTES)
+          },
         ]
       },
       {

@@ -1,20 +1,17 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { SongListComponent } from './song-list/song-list.component';
 
 @Component({
   selector: 'app-admin-songs',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, SongListComponent],
   template: `
-    <div class="container">
+    <div>
       <h2>Song Management</h2>
-      <div class="actions">
-        <button class="btn btn-primary">Upload New Song</button>
-      </div>
-      <!-- Add song list with edit/delete actions -->
+      <app-song-list></app-song-list>
     </div>
   `
 })
 export class AdminSongsComponent {
-  // Add CRUD operations for songs
 } 

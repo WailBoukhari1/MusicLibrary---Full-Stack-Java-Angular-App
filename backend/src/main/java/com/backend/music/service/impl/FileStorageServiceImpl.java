@@ -1,18 +1,11 @@
 package com.backend.music.service.impl;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.UUID;
-
+import com.backend.music.service.FileStorageService;
+import com.backend.music.util.FileValidationUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.mp3.Mp3Parser;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -22,87 +15,79 @@ import org.springframework.web.multipart.MultipartFile;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
-import com.backend.music.config.FileStorageConfig;
-import com.backend.music.service.FileStorageService;
+import jakarta.annotation.PostConstruct;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.UUID;
 
 @Service
 public class FileStorageServiceImpl implements FileStorageService {
 
-    private final Path fileStorageLocation;
-    private final String baseUrl;
+    @Value("${file.upload-dir}")
+    private String uploadDir;
 
-    @Autowired
-    public FileStorageServiceImpl(FileStorageConfig fileStorageConfig,
-            @Value("${app.base-url:http://localhost:8080}") String baseUrl) {
-        this.fileStorageLocation = fileStorageConfig.getFileStorageLocation();
-        this.baseUrl = baseUrl;
+    private Path fileStorageLocation;
+
+    @PostConstruct
+    public void init() {
+        this.fileStorageLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
         try {
             Files.createDirectories(this.fileStorageLocation);
         } catch (IOException ex) {
-            throw new RuntimeException("Could not create the directory where the uploaded files will be stored.", ex);
+            throw new RuntimeException("Could not create the directory for uploaded files", ex);
         }
     }
 
     @Override
-    public String storeFile(MultipartFile file) {
+    public String store(MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            return null;
+            throw new IllegalArgumentException("File cannot be empty");
         }
 
-        String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
-        String fileExtension = getFileExtension(originalFileName);
-        String fileName = UUID.randomUUID().toString() + fileExtension;
-
-        try {
-            if (fileName.contains("..")) {
-                throw new RuntimeException("Invalid file path sequence " + fileName);
+        // For audio files, validate format and size
+        if (file.getContentType() != null && file.getContentType().startsWith("audio/")) {
+            if (!FileValidationUtils.isValidAudioFile(file)) {
+                throw new IllegalArgumentException("Invalid audio file. Must be MP3, WAV, or OGG and less than 15MB");
             }
+        }
 
+        String fileName = UUID.randomUUID().toString() + getFileExtension(file.getOriginalFilename());
+        try {
             Path targetLocation = this.fileStorageLocation.resolve(fileName);
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
-
-            return fileName; // Return just the filename, not the full URL
+            return fileName;
         } catch (IOException ex) {
             throw new RuntimeException("Could not store file " + fileName, ex);
         }
     }
 
     @Override
-    public Resource loadFileAsResource(String fileName) {
+    public Resource load(String fileName) {
         try {
-            if (fileName == null) return null;
-            
-            // Remove the base URL if it's present
-            if (fileName.startsWith(baseUrl)) {
-                fileName = fileName.substring(fileName.lastIndexOf("/") + 1);
-            }
-
             Path filePath = this.fileStorageLocation.resolve(fileName).normalize();
             Resource resource = new UrlResource(filePath.toUri());
             if (resource.exists()) {
                 return resource;
             } else {
-                throw new RuntimeException("File not found " + fileName);
+                throw new RuntimeException("File not found: " + fileName);
             }
         } catch (MalformedURLException ex) {
-            throw new RuntimeException("File not found " + fileName, ex);
+            throw new RuntimeException("File not found: " + fileName, ex);
         }
     }
 
     @Override
-    public void deleteFile(String fileName) {
+    public void delete(String fileName) {
         try {
-            if (fileName == null) return;
-            
-            // Remove the base URL if it's present
-            if (fileName.startsWith(baseUrl)) {
-                fileName = fileName.substring(fileName.lastIndexOf("/") + 1);
-            }
-
             Path filePath = this.fileStorageLocation.resolve(fileName).normalize();
             Files.deleteIfExists(filePath);
         } catch (IOException ex) {
-            throw new RuntimeException("Could not delete file " + fileName, ex);
+            throw new RuntimeException("Could not delete file: " + fileName, ex);
         }
     }
 
@@ -117,8 +102,7 @@ public class FileStorageServiceImpl implements FileStorageService {
             
             String durationStr = metadata.get("xmpDM:duration");
             if (durationStr != null) {
-                double durationInSeconds = Double.parseDouble(durationStr);
-                return (int) Math.round(durationInSeconds);
+                return (int) Math.round(Double.parseDouble(durationStr));
             }
             return 0;
         } catch (Exception e) {

@@ -69,7 +69,7 @@ public class SongController {
     }
     
     @PostMapping("/songs")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ApiResponse<SongResponse>> createSong(@Valid @ModelAttribute SongRequest request) {
         return ResponseEntity.ok(ApiResponse.<SongResponse>builder()
             .success(true)
@@ -78,7 +78,7 @@ public class SongController {
     }
     
     @PutMapping("/songs/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ApiResponse<SongResponse>> updateSong(
             @PathVariable String id,
             @Valid @ModelAttribute SongRequest request) {
@@ -89,7 +89,7 @@ public class SongController {
     }
     
     @DeleteMapping("/songs/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteSong(@PathVariable String id) {
         songService.deleteSong(id);
         return ResponseEntity.ok(ApiResponse.<Void>builder()

@@ -34,4 +34,5 @@ public class SongRequest {
     private List<String> categoryIds = new ArrayList<>();
     
     private MultipartFile audioFile;
+    private MultipartFile imageFile;
 } 

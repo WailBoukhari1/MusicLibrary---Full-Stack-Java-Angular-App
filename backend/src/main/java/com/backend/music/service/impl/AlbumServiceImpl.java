@@ -82,7 +82,7 @@ public class AlbumServiceImpl implements AlbumService {
         Album album = albumMapper.toEntity(request);
         
         if (request.getImageFile() != null && !request.getImageFile().isEmpty()) {
-            String fileName = fileStorageService.storeFile(request.getImageFile());
+            String fileName = fileStorageService.store(request.getImageFile());
             album.setCoverUrl(fileName);
         } else {
             album.setCoverUrl("default-album.jpg");  // Set default image if no image provided
@@ -99,9 +99,9 @@ public class AlbumServiceImpl implements AlbumService {
                 .map(album -> {
                     if (request.getImageFile() != null && !request.getImageFile().isEmpty()) {
                         if (album.getCoverUrl() != null && !album.getCoverUrl().equals("default-album.jpg")) {
-                            fileStorageService.deleteFile(album.getCoverUrl());
+                            fileStorageService.delete(album.getCoverUrl());
                         }
-                        String fileName = fileStorageService.storeFile(request.getImageFile());
+                        String fileName = fileStorageService.store(request.getImageFile());
                         album.setCoverUrl(fileName);
                     }
                     
@@ -124,7 +124,7 @@ public class AlbumServiceImpl implements AlbumService {
                 .orElseThrow(() -> new ResourceNotFoundException("Album not found with id: " + id));
         
         if (album.getCoverUrl() != null) {
-            fileStorageService.deleteFile(album.getCoverUrl());
+            fileStorageService.delete(album.getCoverUrl());
         }
         
         albumRepository.deleteById(id);

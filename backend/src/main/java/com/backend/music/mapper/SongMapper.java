@@ -18,7 +18,7 @@ public interface SongMapper {
     @Mapping(target = "audioFile", ignore = true)
     SongRequest toRequestDto(Song song);
     
-    @Mapping(source = "album", target = "album")
+    @Mapping(source = "album.id", target = "albumId")
     SongResponse toResponseDto(Song song);
     
     @Mapping(target = "id", ignore = true)

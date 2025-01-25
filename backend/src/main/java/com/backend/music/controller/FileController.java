@@ -1,47 +1,47 @@
 package com.backend.music.controller;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import com.backend.music.service.FileStorageService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.backend.music.config.FileStorageConfig;
-import com.backend.music.exception.FileNotFoundException;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/files")
+@RequiredArgsConstructor
 public class FileController {
 
-    private final FileStorageConfig fileStorageConfig;
+    private final FileStorageService fileStorageService;
 
-    @Autowired
-    public FileController(FileStorageConfig fileStorageConfig) {
-        this.fileStorageConfig = fileStorageConfig;
+    @GetMapping("/{fileName}")
+    public ResponseEntity<Resource> getFile(@PathVariable String fileName) {
+        Resource file = fileStorageService.load(fileName);
+        
+        String contentType = determineContentType(fileName);
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + file.getFilename() + "\"")
+                .header(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION)
+                .header(HttpHeaders.CACHE_CONTROL, "max-age=31536000") // Cache for 1 year
+                .body(file);
     }
 
-    @GetMapping("/images/{filename}")
-    public ResponseEntity<Resource> getImage(@PathVariable String filename) {
-        try {
-            Path filePath = fileStorageConfig.getFileStorageLocation().resolve(filename).normalize();
-            Resource resource = new UrlResource(filePath.toUri());
-            
-            if (resource.exists()) {
-                return ResponseEntity.ok()
-                    .contentType(MediaType.IMAGE_JPEG)
-                    .body(resource);
-            }
-            
-            throw new FileNotFoundException("File not found: " + filename);
-        } catch (Exception e) {
-            throw new FileNotFoundException("Could not retrieve file: " + filename, e);
+    private String determineContentType(String fileName) {
+        String lowerFileName = fileName.toLowerCase();
+        if (lowerFileName.endsWith(".mp3")) {
+            return "audio/mpeg";
+        } else if (lowerFileName.endsWith(".wav")) {
+            return "audio/wav";
+        } else if (lowerFileName.endsWith(".ogg")) {
+            return "audio/ogg";
+        } else if (lowerFileName.endsWith(".jpg") || lowerFileName.endsWith(".jpeg")) {
+            return "image/jpeg";
+        } else if (lowerFileName.endsWith(".png")) {
+            return "image/png";
         }
+        return "application/octet-stream";
     }
 } 

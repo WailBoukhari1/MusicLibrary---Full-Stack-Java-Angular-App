@@ -41,9 +41,8 @@ export class AuthService {
         username: decodedToken.sub,
         email: decodedToken.email || '',
         roles: decodedToken.roles || [],
-        active: true,
+        active: decodedToken.active || true,
         createdAt: new Date(),
-        updatedAt: new Date()
       };
       this.currentUserSubject.next(user);
     } else {
@@ -76,9 +75,8 @@ export class AuthService {
       username: response.username,
       email: response.email,
       roles: response.roles,
-      active: response.active,
+      active: response.active || true,
       createdAt: response.createdAt,
-      updatedAt: response.updatedAt
     };
     this.currentUserSubject.next(user);
     this.redirectBasedOnRole(response.roles.includes('ADMIN'));

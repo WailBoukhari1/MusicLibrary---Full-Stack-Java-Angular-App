@@ -1,9 +1,5 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
-import { AdminGuard } from './core/guards/admin.guard';
-import { AlbumListComponent } from './features/admin/albums/album-list/album-list.component';
-import { AlbumFormComponent } from './features/admin/albums/album-form/album-form.component';
-import { AlbumListResolver } from './core/resolvers/album-list.resolver';
 
 export const routes: Routes = [
   {
@@ -39,21 +35,6 @@ export const routes: Routes = [
       {
         path: '',
         loadChildren: () => import('./features/admin/admin.routes').then(m => m.ADMIN_ROUTES)
-      },
-      {
-        path: 'albums',
-        component: AlbumListComponent,
-        resolve: {
-          albums: AlbumListResolver
-        }
-      },
-      {
-        path: 'albums/new',
-        component: AlbumFormComponent
-      },
-      {
-        path: 'albums/edit/:id',
-        component: AlbumFormComponent
       }
     ]
   },

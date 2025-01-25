@@ -11,7 +11,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { AlbumActions } from '../../../../store/album/album.actions';
 import { selectAlbumError, selectAlbumLoading } from '../../../../store/album/album.selectors';
-import { Album } from '../../../../core/models/album.model';
 import { CategoryEnum, GenreEnum } from '../../../../core/models/enums';
 import { Subject, takeUntil } from 'rxjs';
 import { environment } from '../../../../../environments/environment';

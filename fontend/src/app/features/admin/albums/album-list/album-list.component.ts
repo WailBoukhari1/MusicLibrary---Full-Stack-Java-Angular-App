@@ -164,6 +164,6 @@ export class AlbumListComponent implements OnInit {
   }
 
   getImageUrl(coverUrl: string | null | undefined): string {
-    return `${environment.apiUrl}/files/images/${coverUrl}`;
+    return `${environment.apiUrl}/files/${coverUrl}`;
   }
 } 

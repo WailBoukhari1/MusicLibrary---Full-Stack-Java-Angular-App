@@ -7,10 +7,10 @@ export const ADMIN_SONG_ROUTES: Routes = [
   },
   {
     path: 'create',
-    loadComponent: () => import('./create/admin-songs-create.component').then(m => m.AdminSongsCreateComponent)
+    loadComponent: () => import('./song-form/song-form.component').then(m => m.SongFormComponent)
   },
   {
     path: 'edit/:id',
-    loadComponent: () => import('./edit/admin-songs-edit.component').then(m => m.AdminSongsEditComponent)
+    loadComponent: () => import('./song-form/song-form.component').then(m => m.SongFormComponent)
   }
 ]; 

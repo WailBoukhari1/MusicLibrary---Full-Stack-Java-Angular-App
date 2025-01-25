@@ -16,8 +16,8 @@ import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api")
-@PreAuthorize("hasRole('ADMIN')")
+@RequestMapping("/api/users")
+@PreAuthorize("hasAuthority('ADMIN')")
 public class UserController {
     
     private final UserService userService;

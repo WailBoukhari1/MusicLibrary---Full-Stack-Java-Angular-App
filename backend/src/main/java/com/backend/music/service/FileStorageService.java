@@ -4,8 +4,8 @@ import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface FileStorageService {
-    String storeFile(MultipartFile file);
-    void deleteFile(String fileName);
-    Resource loadFileAsResource(String fileName);
+    String store(MultipartFile file);
+    Resource load(String filename);
+    void delete(String filename);
     Integer getAudioDuration(MultipartFile file);
 } 
