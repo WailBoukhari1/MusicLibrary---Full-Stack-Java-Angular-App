@@ -1,8 +1,9 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
 import { AdminGuard } from './core/guards/admin.guard';
-import { AlbumListComponent } from './features/admin/albums/components/album-list/album-list.component';
-import { AlbumFormComponent } from './features/admin/albums/components/album-form/album-form.component';
+import { AlbumListComponent } from './features/admin/albums/album-list/album-list.component';
+import { AlbumFormComponent } from './features/admin/albums/album-form/album-form.component';
+import { AlbumListResolver } from './core/resolvers/album-list.resolver';
 
 export const routes: Routes = [
   {
@@ -30,8 +31,10 @@ export const routes: Routes = [
   // Admin routes
   {
     path: 'admin',
-    loadComponent: () => import('./layouts/admin/admin-layout.component').then(m => m.AdminLayoutComponent),
-    canActivate: [AuthGuard, AdminGuard],
+    loadComponent: () => import('./layouts/admin/admin-layout.component')
+      .then(m => m.AdminLayoutComponent),
+    canActivate: [AuthGuard],
+    data: { roles: ['ADMIN'] },
     children: [
       {
         path: '',
@@ -39,7 +42,10 @@ export const routes: Routes = [
       },
       {
         path: 'albums',
-        component: AlbumListComponent
+        component: AlbumListComponent,
+        resolve: {
+          albums: AlbumListResolver
+        }
       },
       {
         path: 'albums/new',

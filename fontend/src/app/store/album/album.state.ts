@@ -1,4 +1,4 @@
-import { Album } from '../models/album.model';
+import { Album } from '../../core/models/album.model';
 
 export interface AlbumState {
   albums: Album[];

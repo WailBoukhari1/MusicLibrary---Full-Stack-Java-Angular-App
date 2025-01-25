@@ -1,5 +1,5 @@
 import { createActionGroup, props, emptyProps } from '@ngrx/store';
-import { Album } from '../models/album.model';
+import { Album } from '../../core/models/album.model';
 
 export const AlbumActions = createActionGroup({
   source: 'Album',

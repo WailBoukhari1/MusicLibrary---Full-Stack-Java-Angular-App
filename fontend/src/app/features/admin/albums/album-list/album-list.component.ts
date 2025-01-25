@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
-import { Album } from '../../models/album.model';
-import { AlbumActions } from '../../store/album.actions';
+import { Album } from '../../../../core/models/album.model';
+import { AlbumActions } from '../../../../store/album/album.actions';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
@@ -10,10 +10,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { Router } from '@angular/router';
-import { selectAlbums, selectTotalElements } from '../../store/album.selectors';
-import { environment } from '../../../../../../environments/environment';
+import { selectAlbums, selectTotalElements } from '../../../../store/album/album.selectors';
+import { environment } from '../../../../../environments/environment';
 import { ActivatedRoute } from '@angular/router';
-import { Page } from '../../../../../core/models/page.model';
+import { Page } from '../../../../core/models/page.model';
 
 @Component({
   selector: 'app-album-list',

@@ -2,9 +2,9 @@ import { Injectable } from '@angular/core';
 import { Resolve } from '@angular/router';
 import { forkJoin, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { EnumService } from '../../../../core/services/enum.service';
-import { CategoryEnum, GenreEnum } from '../../../../core/models/enums';
-import { ApiResponse } from '../../../../core/models/api-response.model';
+import { EnumService } from '../services/enum.service';
+import { CategoryEnum, GenreEnum } from '../models/enums';
+import { ApiResponse } from '../models/api-response.model';
 
 export interface AlbumEnums {
   categories: CategoryEnum[];

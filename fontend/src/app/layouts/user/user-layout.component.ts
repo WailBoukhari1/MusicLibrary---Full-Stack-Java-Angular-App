@@ -7,8 +7,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSliderModule } from '@angular/material/slider';
 import { Store } from '@ngrx/store';
-import { AuthActions } from '../../features/auth/store/auth.actions';
-import { AuthService } from '../../features/auth/services/auth.service';
+import { AuthActions } from '../../store/auth/auth.actions';
+import { AuthService } from '../../core/services/auth.service';
 import { map } from 'rxjs/operators';
 
 @Component({

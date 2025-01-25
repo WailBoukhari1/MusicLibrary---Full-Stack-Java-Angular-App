@@ -6,6 +6,7 @@ import com.backend.music.dto.request.RefreshTokenRequest;
 import com.backend.music.dto.response.ApiResponse;
 import com.backend.music.dto.response.AuthResponse;
 import com.backend.music.dto.response.UserResponse;
+import com.backend.music.model.User;
 import com.backend.music.service.AuthService;
 import com.backend.music.service.UserService;
 import jakarta.validation.Valid;
@@ -32,11 +33,19 @@ public class AuthController {
     
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<UserResponse>> register(@Valid @RequestBody RegisterRequest request) {
-        UserResponse response = authService.register(request);
-        return ResponseEntity.ok(ApiResponse.<UserResponse>builder()
-            .success(true)
-            .data(response)
-            .build());
+        try {
+            UserResponse user = userService.createUser(request);
+            return ResponseEntity.ok(ApiResponse.<UserResponse>builder()
+                .success(true)
+                .data(user)
+                .build());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.<UserResponse>builder()
+                    .success(false)
+                    .error(e.getMessage())
+                    .build());
+        }
     }
 
     @PostMapping("/logout")

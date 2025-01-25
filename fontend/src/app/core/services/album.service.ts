@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../../../environments/environment';
+import { environment } from '../../../environments/environment';
 import { Album } from '../models/album.model';
-import { ApiResponse } from '../../../../core/models/api-response.model';
-import { Page } from '../../../../core/models/page.model';
+import { ApiResponse } from '../models/api-response.model';
+import { Page } from '../models/page.model';
 import { filter, map } from 'rxjs/operators';
 
 @Injectable({

@@ -2,10 +2,10 @@ import { Injectable } from '@angular/core';
 import { Resolve, RouterStateSnapshot, ActivatedRouteSnapshot } from '@angular/router';
 import { Observable, catchError, of } from 'rxjs';
 import { Store } from '@ngrx/store';
-import { AlbumActions } from '../store/album.actions';
+import { AlbumActions } from '../../store/album/album.actions';
 import { AlbumService } from '../services/album.service';
-import { ApiResponse } from '../../../../core/models/api-response.model';
-import { Page } from '../../../../core/models/page.model';
+import { ApiResponse } from '../models/api-response.model';
+import { Page } from '../models/page.model';
 import { Album } from '../models/album.model';
 
 @Injectable({

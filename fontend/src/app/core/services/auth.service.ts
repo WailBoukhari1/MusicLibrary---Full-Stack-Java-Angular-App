@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
-import { environment } from '../../../../environments/environment';
-import { User } from '../../admin/users/models/user.model';
+import { environment } from '../../../environments/environment';
+import { User } from '../models/user.model';
 import { ApiResponse, AuthResponse, LoginRequest, RegisterRequest } from '../models/auth.model';
 import { JwtHelperService } from '@auth0/angular-jwt';
 
@@ -15,29 +15,40 @@ export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
   private refreshTokenTimeout?: any;
+  private readonly TOKEN_KEY = 'token';
+  private readonly REFRESH_TOKEN_KEY = 'refreshToken';
+  private jwtHelper = new JwtHelperService();
+  private isAuthenticatedSubject = new BehaviorSubject<boolean>(this.hasValidToken());
 
   constructor(
     private http: HttpClient,
-    private router: Router,
-    private jwtHelper: JwtHelperService
+    private router: Router
   ) {
     this.loadStoredUser();
+    // Check token validity periodically
+    setInterval(() => {
+      this.isAuthenticatedSubject.next(this.hasValidToken());
+    }, 60000); // Check every minute
   }
 
   private loadStoredUser(): void {
     const token = this.getToken();
-    if (token) {
+    if (token && !this.jwtHelper.isTokenExpired(token)) {
+      this.isAuthenticatedSubject.next(true);
       const decodedToken = this.jwtHelper.decodeToken(token);
       const user: User = {
-        id: '0',
+        id: decodedToken.sub || '0',
         username: decodedToken.sub,
-        email: '',
+        email: decodedToken.email || '',
         roles: decodedToken.roles || [],
         active: true,
         createdAt: new Date(),
         updatedAt: new Date()
       };
       this.currentUserSubject.next(user);
+    } else {
+      this.isAuthenticatedSubject.next(false);
+      this.currentUserSubject.next(null);
     }
   }
 
@@ -47,7 +58,7 @@ export class AuthService {
       .pipe(
         tap(response => {
           if (response.success && response.data) {
-            this.storeTokens(response.data);
+            this.setTokens(response.data.token, response.data.refreshToken);
             this.handleAuthResponse(response.data);
           }
         })
@@ -79,7 +90,7 @@ export class AuthService {
   }
 
   logout(): Observable<ApiResponse<void>> {
-    const refreshToken = localStorage.getItem('refreshToken');
+    const refreshToken = this.getRefreshToken();
     const token = this.getToken();
     
     return this.http.post<ApiResponse<void>>(`${this.apiUrl}/logout`, { refreshToken }, {
@@ -96,17 +107,57 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    return localStorage.getItem('token');
+    return localStorage.getItem(this.TOKEN_KEY);
   }
 
-  isAuthenticated(): boolean {
+  getRefreshToken(): string | null {
+    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
+  }
+
+  setTokens(token: string, refreshToken: string): void {
+    localStorage.setItem(this.TOKEN_KEY, token);
+    localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
+    this.isAuthenticatedSubject.next(true);
+  }
+
+  clearTokens(): void {
+    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+    this.isAuthenticatedSubject.next(false);
+  }
+
+  hasValidToken(): boolean {
     const token = this.getToken();
     return token != null && !this.jwtHelper.isTokenExpired(token);
   }
 
+  isAuthenticated$(): Observable<boolean> {
+    return this.isAuthenticatedSubject.asObservable();
+  }
+
+  getTokenExpirationDate(): Date | null {
+    const token = this.getToken();
+    return token ? this.jwtHelper.getTokenExpirationDate(token) : null;
+  }
+
+  getUserRoles(): string[] {
+    const token = this.getToken();
+    if (!token) return [];
+    try {
+      const decodedToken = this.jwtHelper.decodeToken(token);
+      console.log('Decoded token:', decodedToken); // Debug full token
+      console.log('Decoded token roles:', decodedToken?.roles);
+      return decodedToken?.roles || [];  // Use roles directly without modification
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return [];
+    }
+  }
+
   isAdmin(): boolean {
-    const user = this.currentUserSubject.value;
-    return user?.roles?.includes('ADMIN') || false;
+    const roles = this.getUserRoles();
+    console.log('Current user roles:', roles);
+    return roles.includes('ADMIN');
   }
 
   getCurrentUser(): Observable<ApiResponse<User>> {
@@ -118,7 +169,7 @@ export class AuthService {
   }
 
   refreshToken(): Observable<ApiResponse<AuthResponse>> {
-    const refreshToken = localStorage.getItem('refreshToken');
+    const refreshToken = this.getRefreshToken();
     return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/refresh`, { refreshToken })
       .pipe(
         tap(response => {
@@ -144,17 +195,5 @@ export class AuthService {
     if (this.refreshTokenTimeout) {
       clearTimeout(this.refreshTokenTimeout);
     }
-  }
-
-  public clearTokens(): void {
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
-  }
-
-  // Store both tokens
-  private storeTokens(authResponse: AuthResponse) {
-    localStorage.setItem('token', authResponse.token);
-    localStorage.setItem('refreshToken', authResponse.refreshToken);
   }
 } 

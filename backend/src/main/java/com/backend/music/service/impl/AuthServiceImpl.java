@@ -8,7 +8,6 @@ import com.backend.music.exception.AuthenticationException;
 import com.backend.music.exception.TokenRefreshException;
 import com.backend.music.mapper.UserMapper;
 import com.backend.music.model.User;
-import com.backend.music.model.Role;
 import com.backend.music.model.RefreshToken;
 import com.backend.music.repository.UserRepository;
 import com.backend.music.security.JwtUtil;
@@ -29,7 +28,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +42,15 @@ public class AuthServiceImpl implements AuthService {
     private final TokenBlacklistService tokenBlacklistService;
     private final RefreshTokenService refreshTokenService;
     private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
+
+    private AuthResponse createAuthResponse(User user, String token, String refreshToken) {
+        return AuthResponse.builder()
+                .token(token)
+                .refreshToken(refreshToken)
+                .username(user.getUsername())
+                .roles(new ArrayList<>(user.getRoles()))  // Convert Set to List
+                .build();
+    }
 
     @Override
     public AuthResponse login(LoginRequest request) {
@@ -71,10 +79,7 @@ public class AuthServiceImpl implements AuthService {
                 .token(token)
                 .refreshToken(refreshToken)
                 .username(user.getUsername())
-                .roles(user.getRoles().stream()
-                    .map(Role::getName)
-                    .map(role -> role.replace("ROLE_", ""))
-                    .collect(Collectors.toList()))
+                .roles(new ArrayList<>(user.getRoles()))  // Convert Set to List
                 .build();
         } catch (AuthenticationException e) {
             throw new AuthenticationException("Invalid username or password");
@@ -94,9 +99,7 @@ public class AuthServiceImpl implements AuthService {
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        Role userRole = new Role();
-        userRole.setName("ROLE_USER");
-        user.setRoles(new HashSet<>(Collections.singleton(userRole)));
+        user.setRoles(new HashSet<>(Collections.singleton("USER")));
         user.setActive(true);
 
         return userMapper.toResponseDto(userRepository.save(user));
@@ -126,10 +129,7 @@ public class AuthServiceImpl implements AuthService {
             .token(token)
             .refreshToken(verifiedToken.getToken())
             .username(user.getUsername())
-            .roles(user.getRoles().stream()
-                .map(Role::getName)
-                .map(role -> role.replace("ROLE_", ""))
-                .collect(Collectors.toList()))
+            .roles(new ArrayList<>(user.getRoles()))  // Convert Set to List
             .build();
     }
     @Override

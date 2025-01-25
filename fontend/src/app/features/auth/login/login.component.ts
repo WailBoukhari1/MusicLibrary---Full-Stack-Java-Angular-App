@@ -8,8 +8,8 @@ import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { AuthActions } from '../../store/auth.actions';
-import { selectAuthError, selectAuthLoading } from '../../store/auth.selectors';
+import { AuthActions } from '../../../store/auth/auth.actions';
+import { selectAuthError, selectAuthLoading } from '../../../store/auth/auth.selectors';
 
 @Component({
   selector: 'app-login',

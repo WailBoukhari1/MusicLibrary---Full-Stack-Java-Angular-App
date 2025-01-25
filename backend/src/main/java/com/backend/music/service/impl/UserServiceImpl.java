@@ -4,7 +4,6 @@ import com.backend.music.dto.request.RegisterRequest;
 import com.backend.music.dto.response.UserResponse;
 import com.backend.music.exception.ResourceNotFoundException;
 import com.backend.music.mapper.UserMapper;
-import com.backend.music.model.Role;
 import com.backend.music.model.User;
 import com.backend.music.repository.UserRepository;
 import com.backend.music.service.UserService;
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -42,23 +40,36 @@ public class UserServiceImpl implements UserService {
     
     @Override
     public UserResponse createUser(RegisterRequest request) {
-        User user = userMapper.toEntity(request);
+        if (request.getUsername() == null || request.getUsername().trim().isEmpty()) {
+            throw new IllegalArgumentException("Username cannot be null or empty");
+        }
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            throw new IllegalArgumentException("Email cannot be null or empty");
+        }
+        
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new IllegalArgumentException("Username already exists");
+        }
+        
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new IllegalArgumentException("Email already exists");
+        }
+
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        return userMapper.toResponseDto(userRepository.save(user));
+        user.setRoles(Set.of("USER"));
+        
+        User savedUser = userRepository.save(user);
+        return userMapper.toResponseDto(savedUser);
     }
     
     @Override
     public UserResponse updateUserRoles(String id, Set<String> roles) {
         return userRepository.findById(id)
                 .map(user -> {
-                    Set<Role> newRoles = roles.stream()
-                            .map(roleName -> {
-                                Role role = new Role();
-                                role.setName(roleName);
-                                return role;
-                            })
-                            .collect(Collectors.toSet());
-                    user.setRoles(newRoles);
+                    user.setRoles(roles);
                     return userMapper.toResponseDto(userRepository.save(user));
                 })
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));

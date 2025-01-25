@@ -1,11 +1,11 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from '../../core/guards/auth.guard';
 import { AdminGuard } from '../../core/guards/admin.guard';
-import { AlbumListComponent } from './albums/components/album-list/album-list.component';
-import { AlbumFormComponent } from './albums/components/album-form/album-form.component';
-import { AlbumListResolver } from './albums/resolvers/album-list.resolver';
-import { AlbumDetailResolver } from './albums/resolvers/album-detail.resolver';
-import { AlbumEnumResolver } from './albums/resolvers/album-enum.resolver';
+import { AlbumListComponent } from './albums/album-list/album-list.component';
+import { AlbumFormComponent } from './albums/album-form/album-form.component';
+import { AlbumListResolver } from '../../core/resolvers/album-list.resolver';
+import { AlbumDetailResolver } from '../../core/resolvers/album-detail.resolver';
+import { AlbumEnumResolver } from '../../core/resolvers/album-enum.resolver';
 
 export const ADMIN_ROUTES: Routes = [
   {

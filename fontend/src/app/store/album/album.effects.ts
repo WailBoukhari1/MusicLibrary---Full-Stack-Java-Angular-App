@@ -4,10 +4,10 @@ import { of } from 'rxjs';
 import { map, mergeMap, catchError, tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { AlbumActions } from './album.actions';
-import { AlbumService } from '../services/album.service';
-import { Page } from '../../../../core/models/page.model';
-import { Album } from '../models/album.model';
-import { ApiResponse } from '../../../../core/models/api-response.model';
+import { AlbumService } from '../../core/services/album.service';
+import { Page } from '../../core/models/page.model';
+import { Album } from '../../core/models/album.model';
+import { ApiResponse } from '../../core/models/api-response.model';
 
 @Injectable()
 export class AlbumEffects {

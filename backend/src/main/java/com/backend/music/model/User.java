@@ -11,6 +11,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 
 @Data
 @Document(collection = "users")
@@ -19,17 +21,22 @@ public class User implements UserDetails {
     private String id;
     
     @Indexed(unique = true)
+    @NotBlank(message = "Username is required")
     private String username;
+    
+    @Indexed(unique = true)
+    @Email(message = "Email should be valid")
+    @NotBlank(message = "Email is required")
     private String email;
+    
     private String password;
     private Boolean active = true;
-    private Set<Role> roles = new HashSet<>();
-    private String role;
+    private Set<String> roles = new HashSet<>();
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return roles.stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))
+                .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
     }
 

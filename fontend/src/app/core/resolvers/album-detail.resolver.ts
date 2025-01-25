@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Resolve, RouterStateSnapshot, ActivatedRouteSnapshot } from '@angular/router';
 import { Observable, catchError, of, timeout } from 'rxjs';
 import { AlbumService } from '../services/album.service';
-import { ApiResponse } from '../../../../core/models/api-response.model';
+import { ApiResponse } from '../models/api-response.model';
 import { Album } from '../models/album.model';
 
 @Injectable({

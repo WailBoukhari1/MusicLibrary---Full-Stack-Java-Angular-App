@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
-import { AlbumListComponent } from './components/album-list/album-list.component';
-import { AlbumFormComponent } from './components/album-form/album-form.component';
+import { AlbumListComponent } from './album-list/album-list.component';
+import { AlbumFormComponent } from './album-form/album-form.component';
 
 export const ADMIN_ALBUM_ROUTES: Routes = [
   {

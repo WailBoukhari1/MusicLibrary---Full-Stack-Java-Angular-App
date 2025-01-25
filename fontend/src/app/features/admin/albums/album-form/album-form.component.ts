@@ -9,12 +9,12 @@ import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { AlbumActions } from '../../store/album.actions';
-import { selectAlbumError, selectAlbumLoading } from '../../store/album.selectors';
-import { Album } from '../../models/album.model';
-import { CategoryEnum, GenreEnum } from '../../../../../core/models/enums';
+import { AlbumActions } from '../../../../store/album/album.actions';
+import { selectAlbumError, selectAlbumLoading } from '../../../../store/album/album.selectors';
+import { Album } from '../../../../core/models/album.model';
+import { CategoryEnum, GenreEnum } from '../../../../core/models/enums';
 import { Subject, takeUntil } from 'rxjs';
-import { environment } from '../../../../../../environments/environment';
+import { environment } from '../../../../../environments/environment';
 
 @Component({
   selector: 'app-album-form',

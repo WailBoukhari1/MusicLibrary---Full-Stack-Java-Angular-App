@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 public class AlbumController {
     
     private final AlbumService albumService;
-    
+  
     @GetMapping("/albums")
     public ResponseEntity<ApiResponse<Page<AlbumResponse>>> getAllAlbums(Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.<Page<AlbumResponse>>builder()
@@ -58,7 +58,7 @@ public class AlbumController {
     }
     
     @PostMapping("/albums")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ApiResponse<AlbumResponse>> createAlbum(@Valid @ModelAttribute AlbumRequest request) {
         return ResponseEntity.ok(ApiResponse.<AlbumResponse>builder()
             .success(true)
@@ -67,7 +67,7 @@ public class AlbumController {
     }
     
     @PutMapping("/albums/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ApiResponse<AlbumResponse>> updateAlbum(
             @PathVariable String id,
             @Valid @ModelAttribute AlbumRequest request) {
@@ -78,7 +78,7 @@ public class AlbumController {
     }
     
     @DeleteMapping("/albums/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteAlbum(@PathVariable String id) {
         albumService.deleteAlbum(id);
         return ResponseEntity.ok(ApiResponse.<Void>builder()
@@ -87,7 +87,7 @@ public class AlbumController {
     }
     
     @PostMapping("/albums/{albumId}/songs/{songId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ApiResponse<AlbumResponse>> addSongToAlbum(
             @PathVariable String albumId,
             @PathVariable String songId) {

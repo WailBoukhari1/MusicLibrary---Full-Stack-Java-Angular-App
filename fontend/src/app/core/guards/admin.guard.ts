@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { CanActivate, Router, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { AuthService } from '../../features/auth/services/auth.service';
+import { CanActivate, Router } from '@angular/router';
+import { AuthService } from '../services/auth.service';
+import { Observable, map, take, tap } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -11,18 +12,23 @@ export class AdminGuard implements CanActivate {
     private router: Router
   ) {}
 
-  canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
-    if (this.authService.isAuthenticated() && this.authService.isAdmin()) {
-      return true;
-    }
-
-    if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/dashboard']); // Redirect non-admin users to user dashboard
-    } else {
-      this.router.navigate(['/auth/login'], {
-        queryParams: { returnUrl: state.url }
-      });
-    }
-    return false;
+  canActivate(): Observable<boolean> {
+    return this.authService.isAuthenticated$().pipe(
+      take(1),
+      tap(isAuthenticated => {
+        if (!isAuthenticated) {
+          this.router.navigate(['/auth/login']);
+        }
+      }),
+      map(isAuthenticated => {
+        if (!isAuthenticated) return false;
+        
+        const isAdmin = this.authService.isAdmin();
+        if (!isAdmin) {
+          this.router.navigate(['/unauthorized']);
+        }
+        return isAdmin;
+      })
+    );
   }
 } 
