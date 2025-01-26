@@ -8,6 +8,8 @@ import org.springframework.stereotype.Repository;
 
 import com.backend.music.model.Album;
 
+import java.time.LocalDateTime;
+
 @Repository
 public interface AlbumRepository extends MongoRepository<Album, String> {
     @Query("{ 'title': { $regex: ?0, $options: 'i' }}")
@@ -18,4 +20,6 @@ public interface AlbumRepository extends MongoRepository<Album, String> {
     
     @Query("{ 'releaseDate': { $gte: ?0, $lt: ?1 }}")
     Page<Album> findByYear(Integer year, Pageable pageable);
+
+    Page<Album> findByReleaseDateBetween(LocalDateTime start, LocalDateTime end, Pageable pageable);
 } 

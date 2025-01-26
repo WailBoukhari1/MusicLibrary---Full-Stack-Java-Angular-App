@@ -5,48 +5,58 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import com.backend.music.model.enums.Category;
 import com.backend.music.model.enums.Genre;
 
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@Document(collection = "albums")
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Document(collection = "albums")
 public class Album {
     @Id
     private String id;
-
-    @NotBlank(message = "Title is required")
+    
+    @Field(name = "title")
     private String title;
-
-    @NotBlank(message = "Artist is required")
+    
+    @Field(name = "artist")
     private String artist;
-
-    @Enumerated(EnumType.STRING)
-    private Genre genre;
-    private String description;
-    private LocalDateTime releaseDate;
+    
+    @Field(name = "cover_url")
     private String coverUrl;
-
-    @DBRef
-    private List<Song> songs = new ArrayList<>();
-
-    @Enumerated(EnumType.STRING)
+    
+    @Field(name = "genre")
+    private Genre genre;
+    
+    @Field(name = "category")
     private Category category;
-
+    
+    @Field(name = "release_date")
+    private LocalDateTime releaseDate;
+    
+    @DBRef(lazy = true)
+    private List<Song> songs = new ArrayList<>();
+    
+    @Field(name = "total_duration")
+    private Integer totalDuration;
+    
+    @Field(name = "total_tracks")
+    private Integer totalTracks;
+    
+    @Field(name = "created_at")
     private LocalDateTime createdAt;
+    
+    @Field(name = "updated_at")
     private LocalDateTime updatedAt;
 }
 

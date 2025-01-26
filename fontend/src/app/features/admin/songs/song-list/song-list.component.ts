@@ -91,7 +91,7 @@ import { environment } from '../../../../../environments/environment';
               <button mat-icon-button (click)="onEditSong(song.id)">
                 <mat-icon>edit</mat-icon>
               </button>
-              <button mat-icon-button color="warn" (click)="onDeleteSong(song.id)">
+              <button mat-icon-button color="warn" (click)="onDeleteSong(song)">
                 <mat-icon>delete</mat-icon>
               </button>
             </td>
@@ -222,9 +222,11 @@ export class SongListComponent implements OnInit {
     if (!coverUrl) return 'assets/default-album.png';
     return `${environment.apiUrl}/files/${coverUrl}`;
   }
-  onDeleteSong(id: string) {
+  onDeleteSong(song: Song): void {
     if (confirm('Are you sure you want to delete this song?')) {
-      this.store.dispatch(SongActions.deleteSong({ id: Number(id) }));
+      if (song && song.id) {
+        this.store.dispatch(SongActions.deleteSong({ id: song.id }));
+      }
     }
   }
 } 

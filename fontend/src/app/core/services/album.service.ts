@@ -23,7 +23,19 @@ export class AlbumService {
     const params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
-    return this.http.get<ApiResponse<Page<Album>>>(`${this.apiUrl}`, { params });
+    return this.http.get<ApiResponse<Page<Album>>>(`${this.apiUrl}`, { params })
+      .pipe(
+        map(response => {
+          if (response.data) {
+            response.data.content = response.data.content.map(album => ({
+              ...album,
+              songs: [],
+              songIds: album.songs.map(song => song.id)
+            }));
+          }
+          return response;
+        })
+      );
   }
 
   createAlbum(albumData: FormData): Observable<ApiResponse<Album>> {

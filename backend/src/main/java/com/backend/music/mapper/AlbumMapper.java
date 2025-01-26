@@ -1,57 +1,45 @@
 package com.backend.music.mapper;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-
-import org.mapstruct.BeanMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
-import org.mapstruct.ReportingPolicy;
+import org.mapstruct.*;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.backend.music.dto.request.AlbumRequest;
 import com.backend.music.dto.response.AlbumResponse;
+import com.backend.music.dto.response.SongResponse;
 import com.backend.music.model.Album;
-import com.backend.music.model.Song;
 
 @Mapper(
     componentModel = "spring",
+    nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
     unmappedTargetPolicy = ReportingPolicy.IGNORE,
-    imports = LocalDateTime.class
+    uses = {SongMapper.class}
 )
-public interface AlbumMapper {
+public abstract class AlbumMapper {
     
-    @Mapping(target = "imageFile", ignore = true)
-    AlbumRequest toRequestDto(Album album);
-    
-    @Mapping(target = "songs", ignore = true)
-    @Mapping(target = "coverUrl", source = "coverUrl")
-    AlbumResponse toResponseDto(Album album);
+    @Autowired
+    protected SongMapper songMapper;
     
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "songs", ignore = true)
     @Mapping(target = "coverUrl", ignore = true)
+    @Mapping(target = "totalDuration", ignore = true)
+    @Mapping(target = "totalTracks", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "releaseDate", expression = "java(request.getReleaseDate() != null ? request.getReleaseDate().atStartOfDay() : null)")
-    Album toEntity(AlbumRequest request);
+    public abstract Album toEntity(AlbumRequest request);
+    
+    @Mapping(target = "imageUrl", source = "coverUrl")
+    @Mapping(target = "songs", expression = "java(songMapper.toResponseList(album.getSongs()))")
+    public abstract AlbumResponse toResponse(Album album);
     
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "songs", ignore = true)
     @Mapping(target = "coverUrl", ignore = true)
+    @Mapping(target = "totalDuration", ignore = true)
+    @Mapping(target = "totalTracks", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "releaseDate", expression = "java(request.getReleaseDate() != null ? request.getReleaseDate().atStartOfDay() : album.getReleaseDate())")
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    void updateEntityFromDto(AlbumRequest request, @MappingTarget Album album);
-
-    default List<String> mapSongs(List<Song> songs) {
-        if (songs == null) return new ArrayList<>();
-        return songs.stream()
-            .map(Song::getId)
-            .collect(Collectors.toList());
-    }
+    public abstract void updateEntityFromRequest(AlbumRequest request, @MappingTarget Album album);
 } 

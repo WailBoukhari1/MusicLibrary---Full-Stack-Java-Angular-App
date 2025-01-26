@@ -11,36 +11,28 @@ export const APP_ROUTES: Routes = [
     pathMatch: 'full'
   },
 
-  // Auth routes (public)
+  // Auth routes (no layout)
   {
     path: 'auth',
-    loadChildren: () => import('./features/auth/auth.routes').then(m => m.AUTH_ROUTES)
+    loadChildren: () => import('./features/auth/auth.routes')
+      .then(m => m.AUTH_ROUTES)
   },
 
-  // User routes (protected)
+  // Admin routes (with admin layout)
   {
-    path: '',
-    component: UserLayoutComponent,
-    canActivate: [AuthGuard],
-    children: [
-      {
-        path: 'user',
-        loadChildren: () => import('./features/user/user.routes').then(m => m.USER_ROUTES)
-      }
-    ]
-  },
-
-  // Admin routes (protected + admin only)
-  {
-    path: '',
+    path: 'admin',
     component: AdminLayoutComponent,
-    canActivate: [AuthGuard, adminGuard],
-    children: [
-      {
-        path: 'admin',
-        loadChildren: () => import('./features/admin/admin.routes').then(m => m.ADMIN_ROUTES)
-      }
-    ]
+    canActivate: [adminGuard],
+    loadChildren: () => import('./features/admin/admin.routes')
+      .then(m => m.ADMIN_ROUTES)
+  },
+
+  // User routes (no layout)
+  {
+    path: 'user',
+    canActivate: [AuthGuard],
+    loadChildren: () => import('./features/user/user.routes')
+      .then(m => m.USER_ROUTES)
   },
 
   // Catch all route

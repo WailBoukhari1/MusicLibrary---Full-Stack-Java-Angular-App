@@ -38,7 +38,7 @@ import { AlbumActions } from '../../../../store/album/album.actions';
         <ng-container matColumnDef="imageUrl">
           <mat-header-cell *matHeaderCellDef>Cover</mat-header-cell>
           <mat-cell *matCellDef="let album">
-            <img [src]="getImageUrl(album.coverUrl)" 
+            <img [src]="getImageUrl(album.imageUrl)" 
                  [alt]="album.title" 
                  class="album-image">
           </mat-cell>
@@ -98,6 +98,7 @@ import { AlbumActions } from '../../../../store/album/album.actions';
       height: 50px;
       object-fit: cover;
       border-radius: 4px;
+      background-color: #f5f5f5;
     }
     mat-table {
       margin-bottom: 20px;
@@ -163,8 +164,10 @@ export class AlbumListComponent implements OnInit {
     }
   }
 
-  getImageUrl(coverUrl: string | null | undefined): string {
-    if (!coverUrl) return 'assets/default-album.png';
-    return `${environment.apiUrl}/files/${coverUrl}`;
+  getImageUrl(imageUrl: string | null | undefined): string {
+    if (!imageUrl) {
+      return 'assets/images/default-album.png';
+    }
+    return `${environment.apiUrl}/files/${imageUrl}`;
   }
 } 

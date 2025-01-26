@@ -21,13 +21,13 @@ export const SongActions = createActionGroup({
     'Create Song Failure': props<{ error: string }>(),
     
     // Update Song
-    'Update Song': props<{ id: number; song: FormData }>(),
+    'Update Song': props<{ id: string; song: FormData }>(),
     'Update Song Success': props<{ song: Song }>(),
     'Update Song Failure': props<{ error: string }>(),
     
     // Delete Song
-    'Delete Song': props<{ id: number }>(),
-    'Delete Song Success': props<{ id: number }>(),
+    'Delete Song': props<{ id: string }>(),
+    'Delete Song Success': props<{ id: string }>(),
     'Delete Song Failure': props<{ error: string }>(),
     
     // Search Songs
@@ -42,6 +42,9 @@ export const SongActions = createActionGroup({
     'Clear Songs': emptyProps(),
     
     // Clear Errors
-    'Clear Errors': emptyProps()
+    'Clear Errors': emptyProps(),
+    
+    // Get Song By Id
+    'Get Song By Id': props<{ id: string }>(),
   }
 }); 

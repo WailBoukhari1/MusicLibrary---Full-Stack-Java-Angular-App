@@ -16,6 +16,7 @@ import { AlbumService } from '../../../core/services/album.service';
 import { CategoryEnum, GenreEnum, EnumMapper, EnumValue } from '../../../core/models/enums.model';
 import { EnumService } from '../../../core/services/enum.service';
 import { PlayerService } from '../../../core/services/player.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-user-library',
@@ -105,8 +106,9 @@ import { PlayerService } from '../../../core/services/player.service';
 
       <div class="albums-grid" *ngIf="!isLoading">
         <mat-card *ngFor="let album of filteredAlbums" class="album-card">
-          <img mat-card-image [src]="album.coverUrl || 'assets/images/default-album.png'" 
-               [alt]="album.title">
+          <img mat-card-image [src]="getImageUrl(album.coverUrl)" 
+               [alt]="album.title"
+               (error)="onImageError($event)">
           <mat-card-content>
             <h3>{{album.title}}</h3>
             <p>{{album.artist}}</p>
@@ -116,10 +118,16 @@ import { PlayerService } from '../../../core/services/player.service';
               <span class="year">{{album.releaseDate | date:'yyyy'}}</span>
             </p>
             <p *ngIf="album.description" class="description">{{album.description}}</p>
+            <p class="songs-count" *ngIf="album.songs?.length">
+              {{album.songs.length}} song{{album.songs.length !== 1 ? 's' : ''}}
+            </p>
           </mat-card-content>
           <mat-card-actions>
-            <button mat-button color="primary" (click)="playAlbum(album)">
-              <mat-icon>play_arrow</mat-icon> Play
+            <button mat-button color="primary" 
+                    [disabled]="!album.songs?.length"
+                    (click)="playAlbum(album)">
+              <mat-icon>{{isCurrentAlbum(album) ? 'pause' : 'play_arrow'}}</mat-icon> 
+              {{isCurrentAlbum(album) ? 'Pause' : 'Play'}}
             </button>
             <button mat-button (click)="toggleFavorite(album)">
               <mat-icon>{{isFavorite(album) ? 'favorite' : 'favorite_border'}}</mat-icon>
@@ -172,6 +180,28 @@ import { PlayerService } from '../../../core/services/player.service';
       img {
         height: 200px;
         object-fit: cover;
+        background-color: #f5f5f5;
+      }
+
+      .songs-count {
+        font-size: 0.9em;
+        color: #666;
+        margin-top: 8px;
+      }
+
+      mat-card-actions {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 16px;
+
+        button {
+          flex: 1;
+          margin: 0 4px;
+          
+          &[disabled] {
+            opacity: 0.6;
+          }
+        }
       }
     }
 
@@ -233,6 +263,7 @@ export class UserLibraryComponent implements OnInit {
   genres: GenreEnum[] = [];
   years: number[] = [];
   favorites: Set<string> = new Set();
+  currentAlbumId: string | null = null;
 
   constructor(
     private albumService: AlbumService,
@@ -256,6 +287,11 @@ export class UserLibraryComponent implements OnInit {
     this.loadEnums();
     this.loadAlbums();
     this.setupFilterSubscription();
+    this.playerService.currentTrack$.subscribe((track: Track | null) => {
+      if (track?.albumId) {
+        this.currentAlbumId = track.albumId;
+      }
+    });
   }
 
   private loadEnums() {
@@ -332,13 +368,33 @@ export class UserLibraryComponent implements OnInit {
     return Object.values(filters).some(value => value !== '');
   }
 
+  getImageUrl(imageUrl: string | null | undefined): string {
+    if (!imageUrl) {
+      return 'assets/images/default-album.png';
+    }
+    return `${environment.apiUrl}/files/${imageUrl}`;
+  }
+
+  onImageError(event: any) {
+    event.target.src = 'assets/images/default-album.png';
+  }
+
   playAlbum(album: Album) {
-    if (album.songs && album.songs.length > 0) {
+    if (!album.songs?.length) {
+      this.showError('No songs available in this album');
+      return;
+    }
+
+    if (this.isCurrentAlbum(album)) {
+      this.playerService.togglePlay();
+    } else {
       this.playerService.playAlbum(album);
       this.showSuccess(`Playing album: ${album.title}`);
-    } else {
-      this.showError('No songs available in this album');
     }
+  }
+
+  isCurrentAlbum(album: Album): boolean {
+    return this.currentAlbumId === album.id;
   }
 
   toggleFavorite(album: Album) {

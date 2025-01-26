@@ -2,6 +2,7 @@ import { Song } from '../../core/models/song.model';
 
 export interface SongState {
   songs: Song[];
+  selectedSong: Song | null;
   loading: boolean;
   error: string | null;
   totalElements: number;
@@ -12,6 +13,7 @@ export interface SongState {
 
 export const initialSongState: SongState = {
   songs: [],
+  selectedSong: null,
   loading: false,
   error: null,
   totalElements: 0,

@@ -54,10 +54,13 @@ export class SongEffects {
       ofType(SongActions.updateSong),
       mergeMap(({ id, song }) =>
         this.songService.updateSong(id, song).pipe(
-          map(response => SongActions.updateSongSuccess({ song: response.data as Song })),
-          catchError(error => of(SongActions.updateSongFailure({ 
-            error: error.error?.message || 'Failed to update song' 
-          })))
+          map(response => {
+            if (!response.data) {
+              throw new Error('No data received');
+            }
+            return SongActions.updateSongSuccess({ song: response.data });
+          }),
+          catchError(error => of(SongActions.updateSongFailure({ error: error.message })))
         )
       )
     )

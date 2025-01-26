@@ -4,14 +4,15 @@ export interface Album {
   id: string;
   title: string;
   artist: string;
-  coverUrl?: string;
-  releaseDate?: Date;
-  createdAt?: Date;
-  updatedAt?: Date;
-  category?: string;
-  genre?: string;
+  coverUrl: string;
+  releaseDate: Date;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+  category: string;
+  genre: string;
   description?: string;
-  songs?: Song[];
+  songs: Song[];
+  songIds: string[];
 }
 
 export interface AlbumResponse {

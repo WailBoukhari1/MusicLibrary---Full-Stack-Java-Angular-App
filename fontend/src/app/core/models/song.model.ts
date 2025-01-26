@@ -2,7 +2,7 @@ import { CategoryEnum, GenreEnum } from './enums.model';
 import { Album } from './album.model';
 
 export interface Song {
-  id: number;
+  id: string;
   title: string;
   artist: string;
   albumId?: string;
@@ -12,8 +12,8 @@ export interface Song {
   coverUrl?: string;
   audioFileId?: string;
   imageFileId?: string;
-  category?: string;
-  genre?: string;
+  trackNumber?: number;
+  description?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }

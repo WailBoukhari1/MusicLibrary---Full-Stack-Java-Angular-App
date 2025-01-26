@@ -14,9 +14,13 @@ import { Album } from '../../../../core/models/album.model';
 import { environment } from '../../../../../environments/environment';
 import { Store } from '@ngrx/store';
 import { SongActions } from '../../../../store/song/song.actions';
-import { selectSongsLoading, selectSongsError } from '../../../../store/song/song.selectors';
+import { selectSongsLoading, selectSongsError, selectSelectedSong } from '../../../../store/song/song.selectors';
+import { selectAlbums } from '../../../../store/album/album.selectors';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-import { Subject } from 'rxjs';
+import { Subject, Observable } from 'rxjs';
+import { filter, take } from 'rxjs/operators';
+import { AlbumActions } from '../../../../store/album/album.actions';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-song-form',
@@ -29,36 +33,36 @@ import { Subject } from 'rxjs';
     MatSelectModule,
     MatButtonModule,
     MatCardModule,
-    MatProgressBarModule
+    MatProgressBarModule,
+    MatIconModule
   ],
   template: `
     <div class="form-container">
       <mat-card class="form-card">
         <mat-card-header>
-          <mat-card-title>{{isEditing ? 'Edit' : 'Create'}} Song</mat-card-title>
+          <mat-card-title>{{ isEditMode ? 'Edit' : 'Create' }} Song</mat-card-title>
         </mat-card-header>
 
         <mat-card-content>
           <form [formGroup]="songForm" (ngSubmit)="onSubmit()" class="form-content">
             <mat-form-field appearance="outline">
               <mat-label>Title</mat-label>
-              <input matInput formControlName="title" [readonly]="true">
+              <input matInput formControlName="title" required>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Artist</mat-label>
               <input matInput formControlName="artist" required>
-              <mat-error *ngIf="songForm.get('artist')?.hasError('required')">
-                Artist is required
-              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Genre</mat-label>
+              <input matInput formControlName="genre" required>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Track Number</mat-label>
-              <input matInput type="number" formControlName="trackNumber" required>
-              <mat-error *ngIf="songForm.get('trackNumber')?.hasError('required')">
-                Track number is required
-              </mat-error>
+              <input matInput type="number" formControlName="trackNumber">
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -68,15 +72,12 @@ import { Subject } from 'rxjs';
 
             <mat-form-field appearance="outline">
               <mat-label>Album</mat-label>
-              <mat-select formControlName="albumId" required>
+              <mat-select formControlName="albumId">
                 <mat-option [value]="null">None</mat-option>
-                <mat-option *ngFor="let album of albums" [value]="album.id">
-                  {{album.title}} - {{album.artist}}
+                <mat-option *ngFor="let album of albums$ | async" [value]="album.id">
+                  {{album.title}}
                 </mat-option>
               </mat-select>
-              <mat-error *ngIf="songForm.get('albumId')?.hasError('required')">
-                Album is required
-              </mat-error>
             </mat-form-field>
 
             <div class="preview-section">
@@ -94,7 +95,8 @@ import { Subject } from 'rxjs';
             <div class="file-inputs">
               <div class="file-input-group">
                 <button type="button" mat-raised-button (click)="audioFileInput.click()">
-                  Select Audio File
+                  <mat-icon>audiotrack</mat-icon>
+                  {{ isEditMode ? 'Change' : 'Upload' }} Audio File
                 </button>
                 <span class="file-name" *ngIf="selectedAudioFile">
                   {{selectedAudioFile.name}}
@@ -105,7 +107,8 @@ import { Subject } from 'rxjs';
 
               <div class="file-input-group">
                 <button type="button" mat-raised-button (click)="imageFileInput.click()">
-                  Select Cover Image
+                  <mat-icon>image</mat-icon>
+                  {{ isEditMode ? 'Change' : 'Upload' }} Cover Image
                 </button>
                 <span class="file-name" *ngIf="selectedImageFile">
                   {{selectedImageFile.name}}
@@ -116,12 +119,12 @@ import { Subject } from 'rxjs';
             </div>
 
             <div class="form-actions">
-              <button mat-button type="button" (click)="goBack()">Cancel</button>
+              <button mat-button type="button" (click)="onCancel()">Cancel</button>
               <button mat-raised-button 
                       color="primary" 
                       type="submit"
-                      [disabled]="!canSubmit()">
-                {{isEditing ? 'Update' : 'Create'}} Song
+                      [disabled]="songForm.invalid">
+                {{ isEditMode ? 'Update' : 'Create' }} Song
               </button>
             </div>
           </form>
@@ -205,16 +208,25 @@ import { Subject } from 'rxjs';
   `]
 })
 export class SongFormComponent implements OnInit, OnDestroy {
-  songForm: FormGroup;
-  isEditing = false;
-  songId?: number;
+  songForm = this.fb.group({
+    id: [''],
+    title: ['', Validators.required],
+    artist: ['', Validators.required],
+    genre: ['', Validators.required],
+    trackNumber: [null as number | null],
+    description: [''],
+    albumId: [null as string | null],
+    audioFile: [null],
+    imageFile: [null]
+  });
+
+  isEditMode = false;
+  song$ = this.store.select(selectSelectedSong);
+  albums$ = this.store.select(selectAlbums) as Observable<Album[]>;
   selectedAudioFile: File | null = null;
   selectedImageFile: File | null = null;
   imagePreviewUrl?: SafeUrl;
   audioPreviewUrl?: SafeUrl;
-  albums: Album[] = [];
-  loading$ = this.store.select(selectSongsLoading);
-  error$ = this.store.select(selectSongsError);
   private readonly destroy$ = new Subject<void>();
 
   constructor(
@@ -228,55 +240,50 @@ export class SongFormComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone
   ) {
-    this.songForm = this.fb.group({
-      title: [''],
-      artist: ['', Validators.required],
-      trackNumber: [1, [Validators.required, Validators.min(1)]],
-      description: [''],
-      albumId: [null],
-      audioFileId: [''],
-      imageFileId: [''],
-      category: ['', Validators.required],
-      genre: ['', Validators.required]
-    });
   }
 
   ngOnInit(): void {
-    this.loadAlbums();
-    const idParam = this.route.snapshot.paramMap.get('id');
-    this.songId = idParam ? +idParam : undefined;
-    if (this.songId) {
-      this.isEditing = true;
-      this.loadSong();
+    // Load albums for the dropdown
+    this.store.dispatch(AlbumActions.loadAlbums({ page: 0, size: 100 }));
+
+    // Check if we're in edit mode
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.isEditMode = true;
+      this.store.dispatch(SongActions.getSongById({ id }));
+
+      // Subscribe to song data and fill the form
+      this.song$.pipe(
+        filter((song): song is NonNullable<typeof song> => !!song),
+        take(1)
+      ).subscribe(song => {
+        // Update form with song data
+        this.songForm.patchValue({
+          id: song.id,
+          title: song.title,
+          artist: song.artist,
+          trackNumber: song.trackNumber,
+          description: song.description,
+          albumId: song.albumId
+        });
+
+        // Set preview URLs if available
+        if (song.imageFileId) {
+          this.imagePreviewUrl = this.sanitizer.bypassSecurityTrustUrl(
+            `${environment.apiUrl}/files/${song.imageFileId}`
+          );
+        }
+
+        if (song.audioFileId) {
+          this.audioPreviewUrl = this.sanitizer.bypassSecurityTrustUrl(
+            `${environment.apiUrl}/files/${song.audioFileId}`
+          );
+        }
+
+        // Trigger change detection
+        this.cdr.detectChanges();
+      });
     }
-  }
-
-  loadAlbums() {
-    this.albumService.getAlbums(0, 1000).subscribe({
-      next: (response) => {
-        if (response?.success && response?.data) {
-          this.albums = response.data.content;
-        }
-      },
-      error: (error) => console.error('Error loading albums:', error)
-    });
-  }
-
-  loadSong(): void {
-    this.songService.getSongById(this.songId!).subscribe({
-      next: (response) => {
-        if (response.data) {
-          this.songForm.patchValue(response.data);
-          if (response.data.imageFileId) {
-            this.imagePreviewUrl = `${environment.apiUrl}/files/${response.data.imageFileId}`;
-          }
-          if (response.data.audioFileId) {
-            this.audioPreviewUrl = `${environment.apiUrl}/files/${response.data.audioFileId}`;
-          }
-        }
-      },
-      error: (error) => console.error('Error loading song:', error)
-    });
   }
 
   onAudioFileSelected(event: any): void {
@@ -290,7 +297,7 @@ export class SongFormComponent implements OnInit, OnDestroy {
         this.songForm.patchValue({ 
           title: fileName,
           artist: this.songForm.get('artist')?.value || '',
-          trackNumber: this.songForm.get('trackNumber')?.value || 1
+          genre: this.songForm.get('genre')?.value || ''
         });
 
         // Create audio preview
@@ -322,29 +329,47 @@ export class SongFormComponent implements OnInit, OnDestroy {
   }
 
   onSubmit(): void {
-    if (this.canSubmit()) {
+    if (this.songForm.valid) {
       const formData = new FormData();
-      formData.append('title', this.songForm.get('title')?.value);
-      formData.append('artist', this.songForm.get('artist')?.value);
-      formData.append('trackNumber', this.songForm.get('trackNumber')?.value);
-      formData.append('audioFile', this.selectedAudioFile!);
+      const controls = this.songForm.controls;
+
+      formData.append('title', controls.title.value || '');
+      formData.append('artist', controls.artist.value || '');
+      formData.append('genre', controls.genre.value || '');
       
+      if (controls.trackNumber.value) {
+        formData.append('trackNumber', controls.trackNumber.value.toString());
+      }
+      
+      if (controls.description.value) {
+        formData.append('description', controls.description.value);
+      }
+      
+      if (controls.albumId.value) {
+        formData.append('albumId', controls.albumId.value);
+      }
+      
+      if (this.selectedAudioFile) {
+        formData.append('audioFile', this.selectedAudioFile);
+      }
+
       if (this.selectedImageFile) {
         formData.append('imageFile', this.selectedImageFile);
       }
 
-      this.store.dispatch(SongActions.createSong({ song: formData }));
+      if (this.isEditMode) {
+        const id = controls.id.value;
+        if (id) {
+          this.store.dispatch(SongActions.updateSong({ id, song: formData }));
+        }
+      } else {
+        this.store.dispatch(SongActions.createSong({ song: formData }));
+      }
     }
   }
 
-  goBack(): void {
+  onCancel(): void {
     this.router.navigate(['/admin/songs']);
-  }
-
-  canSubmit(): boolean {
-    const artistValid = this.songForm.get('artist')?.valid ?? false;
-    const trackNumberValid = this.songForm.get('trackNumber')?.valid ?? false;
-    return artistValid && trackNumberValid && !!this.selectedAudioFile;
   }
 
   ngOnDestroy(): void {

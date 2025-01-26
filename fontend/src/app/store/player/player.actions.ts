@@ -12,7 +12,7 @@ export const PlayerActions = createActionGroup({
     'Set Volume': props<{ volume: number }>(),
     'Set Progress': props<{ progress: number }>(),
     'Add To Queue': props<{ song: Song }>(),
-    'Remove From Queue': props<{ songId: number }>(),
+    'Remove From Queue': props<{ songId: string }>(),
     'Clear Queue': emptyProps(),
     'Skip Next': emptyProps(),
     'Skip Previous': emptyProps(),

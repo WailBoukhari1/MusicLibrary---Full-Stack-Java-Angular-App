@@ -10,10 +10,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
+import lombok.RequiredArgsConstructor;
 
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
@@ -26,11 +26,13 @@ import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class FileStorageServiceImpl implements FileStorageService {
 
     @Value("${file.upload-dir}")
     private String uploadDir;
 
+    private final FileValidationUtils fileValidationUtils;
     private Path fileStorageLocation;
 
     @PostConstruct
@@ -51,7 +53,7 @@ public class FileStorageServiceImpl implements FileStorageService {
 
         // For audio files, validate format and size
         if (file.getContentType() != null && file.getContentType().startsWith("audio/")) {
-            if (!FileValidationUtils.isValidAudioFile(file)) {
+            if (!fileValidationUtils.isValidAudioFile(file)) {
                 throw new IllegalArgumentException("Invalid audio file. Must be MP3, WAV, or OGG and less than 15MB");
             }
         }

@@ -9,6 +9,8 @@ import com.backend.music.dto.request.SongRequest;
 import com.backend.music.dto.response.SongResponse;
 import com.backend.music.model.Song;
 
+import java.util.List;
+
 public interface SongService {
     Page<SongResponse> getAllSongs(Pageable pageable);
     Page<SongResponse> searchByTitle(String title, Pageable pageable);
@@ -18,4 +20,5 @@ public interface SongService {
     SongResponse updateSong(String id, SongRequest request);
     void deleteSong(String id);
     Resource getAudioFile(String id);
+    List<SongResponse> getSongsByIds(List<String> songIds);
 } 

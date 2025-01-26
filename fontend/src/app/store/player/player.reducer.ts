@@ -58,7 +58,7 @@ export const playerReducer = createReducer(
   
   on(PlayerActions.removeFromQueue, (state, { songId }) => ({
     ...state,
-    queue: state.queue.filter(song => song.id !== songId)
+    queue: state.queue.filter(song => song.id === songId)
   })),
   
   on(PlayerActions.clearQueue, (state) => ({
