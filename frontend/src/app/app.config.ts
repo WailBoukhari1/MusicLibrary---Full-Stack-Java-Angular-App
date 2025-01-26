@@ -19,6 +19,7 @@ import { songReducer } from './store/song/song.reducer';
 import { playerReducer } from './store/player/player.reducer';
 import { SongEffects } from './store/song/song.effects';
 import { PlayerEffects } from './store/player/player.effects';
+import { AudioService } from './core/services/audio.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -52,6 +53,7 @@ export const appConfig: ApplicationConfig = {
       autoPause: true,
       trace: false,
       traceLimit: 75,
-    })
+    }),
+    AudioService,
   ]
 };

@@ -1,18 +1,25 @@
-import { createActionGroup, props } from '@ngrx/store';
+import { createActionGroup, emptyProps, props } from '@ngrx/store';
 import { Album } from '../../core/models/album.model';
 import { Song } from '../../core/models/song.model';
 
 export const PlayerActions = createActionGroup({
   source: 'Player',
   events: {
+    'Play': props<{ song: Song }>(),
     'Play Album': props<{ album: Album }>(),
-    'Play Song': props<{ song: Song }>(),
+    'Toggle Play': emptyProps(),
     'Pause': emptyProps(),
     'Resume': emptyProps(),
-    'Next Track': emptyProps(),
-    'Previous Track': emptyProps(),
+    'Stop': emptyProps(),
+    'Set Volume': props<{ volume: number }>(),
+    'Set Progress': props<{ progress: number }>(),
+    'Add To Queue': props<{ song: Song }>(),
+    'Remove From Queue': props<{ songId: string }>(),
+    'Clear Queue': emptyProps(),
+    'Skip Next': emptyProps(),
+    'Skip Previous': emptyProps(),
+    'Toggle Shuffle': emptyProps(),
+    'Toggle Repeat': emptyProps(),
     'Set Queue': props<{ songs: Song[] }>(),
-    'Set Current Track': props<{ song: Song | null }>(),
-    'Set Playing State': props<{ isPlaying: boolean }>(),
   }
 }); 

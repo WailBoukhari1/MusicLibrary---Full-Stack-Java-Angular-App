@@ -1,11 +1,11 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
-import { PlayerState } from './player.state';
+import { PlayerState } from './player.reducer';
 
 export const selectPlayerState = createFeatureSelector<PlayerState>('player');
 
 export const selectCurrentTrack = createSelector(
   selectPlayerState,
-  (state) => state.currentTrack
+  (state) => state.currentSong
 );
 
 export const selectIsPlaying = createSelector(
@@ -13,22 +13,22 @@ export const selectIsPlaying = createSelector(
   (state) => state.isPlaying
 );
 
-export const selectQueue = createSelector(
-  selectPlayerState,
-  (state) => state.queue
-);
-
-export const selectCurrentIndex = createSelector(
-  selectPlayerState,
-  (state) => state.currentIndex
-);
-
 export const selectCanSkipNext = createSelector(
   selectPlayerState,
-  (state) => state.currentIndex < state.queue.length - 1
+  (state) => state.queue.length > 0
 );
 
 export const selectCanSkipPrevious = createSelector(
   selectPlayerState,
-  (state) => state.currentIndex > 0
+  (state) => state.queue.length > 0
+);
+
+export const selectProgress = createSelector(
+  selectPlayerState,
+  (state) => state.progress
+);
+
+export const selectVolume = createSelector(
+  selectPlayerState,
+  (state) => state.volume
 ); 

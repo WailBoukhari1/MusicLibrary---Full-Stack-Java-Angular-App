@@ -67,9 +67,11 @@ export class AlbumService {
     return this.http.get<AlbumsResponse>(`${this.apiUrl}/search?query=${query}`);
   }
 
-  getAlbumById(id: string): Observable<AlbumResponse> {
-    return this.http.get<AlbumResponse>(`${this.apiUrl}/${id}`);
+  getAlbumById(id: string): Observable<ApiResponse<Album>> {
+    return this.http.get<ApiResponse<Album>>(`${environment.apiUrl}/api/albums/${id}`);
   }
 
-
+  // getAlbums(): Observable<ApiResponse<Page<Album>>> {
+  //   return this.http.get<ApiResponse<Page<Album>>>(`${environment.apiUrl}/api/albums`);
+  // }
 }

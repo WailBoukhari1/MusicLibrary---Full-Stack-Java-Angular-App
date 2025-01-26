@@ -1,46 +1,78 @@
 import { createReducer, on } from '@ngrx/store';
+import { Song } from '../../core/models/song.model';
 import { PlayerActions } from './player.actions';
-import { PlayerState, initialPlayerState } from './player.state';
+
+export interface PlayerState {
+  currentSong: Song | null;
+  queue: Song[];
+  isPlaying: boolean;
+  volume: number;
+  progress: number;
+  shuffle: boolean;
+  repeat: boolean;
+}
+
+const initialState: PlayerState = {
+  currentSong: null,
+  queue: [],
+  isPlaying: false,
+  volume: 1,
+  progress: 0,
+  shuffle: false,
+  repeat: false
+};
 
 export const playerReducer = createReducer(
-  initialPlayerState,
-  on(PlayerActions.playAlbum, (state, { album }) => ({
+  initialState,
+  
+  on(PlayerActions.play, (state, { song }) => ({
     ...state,
-    queue: album.songs || [],
-    currentTrack: album.songs?.[0] || null,
-    currentIndex: 0,
+    currentSong: song,
     isPlaying: true
   })),
-  on(PlayerActions.playTrack, (state, { song }) => ({
-    ...state,
-    currentTrack: song,
-    currentIndex: state.queue.findIndex(s => s.id === song.id),
-    isPlaying: true
-  })),
+  
   on(PlayerActions.pause, (state) => ({
     ...state,
     isPlaying: false
   })),
+  
   on(PlayerActions.resume, (state) => ({
     ...state,
     isPlaying: true
   })),
-  on(PlayerActions.nextTrack, (state) => {
-    const nextIndex = state.currentIndex + 1;
-    if (nextIndex >= state.queue.length) return state;
-    return {
-      ...state,
-      currentTrack: state.queue[nextIndex],
-      currentIndex: nextIndex
-    };
-  }),
-  on(PlayerActions.previousTrack, (state) => {
-    const prevIndex = state.currentIndex - 1;
-    if (prevIndex < 0) return state;
-    return {
-      ...state,
-      currentTrack: state.queue[prevIndex],
-      currentIndex: prevIndex
-    };
-  })
-); 
+  
+  on(PlayerActions.setVolume, (state, { volume }) => ({
+    ...state,
+    volume
+  })),
+  
+  on(PlayerActions.setProgress, (state, { progress }) => ({
+    ...state,
+    progress
+  })),
+  
+  on(PlayerActions.addToQueue, (state, { song }) => ({
+    ...state,
+    queue: [...state.queue, song]
+  })),
+  
+  on(PlayerActions.removeFromQueue, (state, { songId }) => ({
+    ...state,
+    queue: state.queue.filter(song => song.id === songId)
+  })),
+  
+  on(PlayerActions.clearQueue, (state) => ({
+    ...state,
+    queue: []
+  })),
+  
+  on(PlayerActions.toggleShuffle, (state) => ({
+    ...state,
+    shuffle: !state.shuffle
+  })),
+  
+  on(PlayerActions.toggleRepeat, (state) => ({
+    ...state,
+    repeat: !state.repeat
+  }))
+);

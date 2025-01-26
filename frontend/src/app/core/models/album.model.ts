@@ -1,24 +1,29 @@
 import { Song } from './song.model';
+import { CategoryEnum, GenreEnum } from './enums.model';
 
 export interface Album {
   id: string;
   title: string;
   artist: string;
-  coverUrl: string;
-  releaseDate: Date;
-  createdAt: Date | null;
-  updatedAt: Date | null;
+  imageUrl?: string;
+  releaseDate?: Date;
   category: string;
   genre: string;
-  description?: string;
   songs: Song[];
-  songIds: string[];
+  songIds?: string[];
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface AlbumResponse {
   success: boolean;
-  data: Album;
-  error?: string;
+  data: {
+    content: Album[];
+    totalElements: number;
+    totalPages: number;
+    size: number;
+    number: number;
+  };
 }
 
 export interface AlbumsResponse {

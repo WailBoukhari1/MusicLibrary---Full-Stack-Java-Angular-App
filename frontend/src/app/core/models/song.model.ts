@@ -5,15 +5,17 @@ export interface Song {
   id: string;
   title: string;
   artist: string;
-  albumId?: string;
-  album?: Album;
-  duration: number;
-  audioUrl: string;
-  coverUrl?: string;
-  audioFileId?: string;
-  imageFileId?: string;
+  genre?: string;
   trackNumber?: number;
   description?: string;
+  audioFileId?: string;
+  imageFileId?: string;
+  albumId?: string;
+  audioUrl?: string;
+  imageUrl?: string;
+  albumTitle?: string;
+  albumArtist?: string;
+  duration?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }

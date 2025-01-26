@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { Song } from '../models/song.model';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/api-response.model';
@@ -39,7 +39,18 @@ export class SongService {
     return this.http.get<ApiResponse<Song[]>>(`${this.apiUrl}/search`, { params });
   }
 
-  getSongById(id: number): Observable<ApiResponse<Song>> {
-    return this.http.get<ApiResponse<Song>>(`${this.apiUrl}/${id}`);
+  getSongById(id: string): Observable<Song> {
+    return this.http.get<ApiResponse<Song>>(`${environment.apiUrl}/songs/${id}`).pipe(
+      map(response => {
+        if (response.success && response.data) {
+          return {
+            ...response.data,
+            audioUrl: response.data.audioUrl ? `${environment.apiUrl}/files/${response.data.audioUrl}` : undefined,
+            imageUrl: response.data.imageUrl ? `${environment.apiUrl}/files/${response.data.imageUrl}` : undefined
+          };
+        }
+        throw new Error('Failed to fetch song');
+      })
+    );
   }
 } 

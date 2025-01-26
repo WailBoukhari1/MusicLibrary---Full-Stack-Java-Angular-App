@@ -1,13 +1,14 @@
 import { Routes } from '@angular/router';
-import { AuthGuard, adminGuard } from './core/guards/auth.guard';
+import { AuthGuard, adminGuard, authGuard } from './core/guards/auth.guard';
 import { AdminLayoutComponent } from './shared/layouts/admin/admin-layout.component';
 import { UserLayoutComponent } from './shared/layouts/user/user-layout.component';
+import { noAuthGuard } from './core/guards/no-auth.guard';
 
 export const APP_ROUTES: Routes = [
   // Default redirect
   {
     path: '',
-    redirectTo: 'auth/login',
+    redirectTo: 'user/library',
     pathMatch: 'full'
   },
 
@@ -15,7 +16,8 @@ export const APP_ROUTES: Routes = [
   {
     path: 'auth',
     loadChildren: () => import('./features/auth/auth.routes')
-      .then(m => m.AUTH_ROUTES)
+      .then(m => m.AUTH_ROUTES),
+    canActivate: [noAuthGuard]
   },
 
   // Admin routes (with admin layout)
@@ -30,9 +32,10 @@ export const APP_ROUTES: Routes = [
   // User routes (no layout)
   {
     path: 'user',
-    canActivate: [AuthGuard],
+    component: UserLayoutComponent,
+    canActivate: [authGuard],
     loadChildren: () => import('./features/user/user.routes')
-      .then(m => m.USER_ROUTES)
+      .then(m => m.USER_ROUTES),
   },
 
   // Catch all route
