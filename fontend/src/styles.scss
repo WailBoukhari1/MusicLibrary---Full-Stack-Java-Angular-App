@@ -1,4 +1,17 @@
-/* You can add global styles to this file, and also import other style files */
+@use '@angular/material' as mat;
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+// Include the common styles for Angular Material
+@include mat.core();
+
+// Define your theme
+$your-primary: mat.define-palette(mat.$indigo-palette);
+$your-accent: mat.define-palette(mat.$pink-palette);
+$your-theme: mat.define-light-theme((
+  color: (
+    primary: $your-primary,
+    accent: $your-accent,
+  )
+));
+
+// Include theme styles for core and each component used
+@include mat.all-component-themes($your-theme);

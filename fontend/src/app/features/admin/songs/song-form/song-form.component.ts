@@ -1,14 +1,22 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatCardModule } from '@angular/material/card';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SongService } from '../../../../core/services/song.service';
+import { AlbumService } from '../../../../core/services/album.service';
+import { Album } from '../../../../core/models/album.model';
 import { environment } from '../../../../../environments/environment';
+import { Store } from '@ngrx/store';
+import { SongActions } from '../../../../store/song/song.actions';
+import { selectSongsLoading, selectSongsError } from '../../../../store/song/song.selectors';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { Subject } from 'rxjs';
 
 @Component({
   selector: 'app-song-form',
@@ -18,9 +26,10 @@ import { environment } from '../../../../../environments/environment';
     ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
     MatButtonModule,
-    MatProgressBarModule,
-    MatCardModule
+    MatCardModule,
+    MatProgressBarModule
   ],
   template: `
     <div class="form-container">
@@ -33,10 +42,7 @@ import { environment } from '../../../../../environments/environment';
           <form [formGroup]="songForm" (ngSubmit)="onSubmit()" class="form-content">
             <mat-form-field appearance="outline">
               <mat-label>Title</mat-label>
-              <input matInput formControlName="title" required>
-              <mat-error *ngIf="songForm.get('title')?.hasError('required')">
-                Title is required
-              </mat-error>
+              <input matInput formControlName="title" [readonly]="true">
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -60,44 +66,52 @@ import { environment } from '../../../../../environments/environment';
               <textarea matInput formControlName="description" rows="3"></textarea>
             </mat-form-field>
 
-            <div class="file-upload">
-              <label class="file-label">Audio File</label>
-              <div class="file-input-container">
-                <input type="file" 
-                       (change)="onAudioFileSelected($event)" 
-                       accept="audio/mp3,audio/wav,audio/ogg"
-                       class="file-input" 
-                       #audioFileInput>
-                <button type="button" 
-                        mat-stroked-button 
-                        (click)="audioFileInput.click()">
-                  Select Audio File
-                </button>
-                <span class="file-name" *ngIf="audioFile">{{audioFile.name}}</span>
-                <span class="file-name" *ngIf="songForm.get('audioFileId')?.value && !audioFile">
-                  Current audio file exists
-                </span>
+            <mat-form-field appearance="outline">
+              <mat-label>Album</mat-label>
+              <mat-select formControlName="albumId" required>
+                <mat-option [value]="null">None</mat-option>
+                <mat-option *ngFor="let album of albums" [value]="album.id">
+                  {{album.title}} - {{album.artist}}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="songForm.get('albumId')?.hasError('required')">
+                Album is required
+              </mat-error>
+            </mat-form-field>
+
+            <div class="preview-section">
+              <div class="image-preview" *ngIf="imagePreviewUrl">
+                <img [src]="imagePreviewUrl" alt="Cover preview">
+              </div>
+
+              <div class="audio-preview" *ngIf="audioPreviewUrl">
+                <audio controls [src]="audioPreviewUrl">
+                  Your browser does not support the audio element.
+                </audio>
               </div>
             </div>
 
-            <div class="file-upload">
-              <label class="file-label">Cover Image</label>
-              <div class="file-input-container">
-                <input type="file" 
-                       (change)="onImageFileSelected($event)" 
-                       accept="image/*"
-                       class="file-input" 
-                       #imageFileInput>
-                <button type="button" 
-                        mat-stroked-button 
-                        (click)="imageFileInput.click()">
-                  Select Image
+            <div class="file-inputs">
+              <div class="file-input-group">
+                <button type="button" mat-raised-button (click)="audioFileInput.click()">
+                  Select Audio File
                 </button>
-                
-                <div class="image-preview" *ngIf="imagePreview || currentImageUrl">
-                  <img [src]="imagePreview || currentImageUrl" 
-                       alt="Cover preview">
-                </div>
+                <span class="file-name" *ngIf="selectedAudioFile">
+                  {{selectedAudioFile.name}}
+                </span>
+                <input #audioFileInput type="file" (change)="onAudioFileSelected($event)" 
+                       accept="audio/*" style="display: none">
+              </div>
+
+              <div class="file-input-group">
+                <button type="button" mat-raised-button (click)="imageFileInput.click()">
+                  Select Cover Image
+                </button>
+                <span class="file-name" *ngIf="selectedImageFile">
+                  {{selectedImageFile.name}}
+                </span>
+                <input #imageFileInput type="file" (change)="onImageFileSelected($event)" 
+                       accept="image/*" style="display: none">
               </div>
             </div>
 
@@ -105,9 +119,9 @@ import { environment } from '../../../../../environments/environment';
               <button mat-button type="button" (click)="goBack()">Cancel</button>
               <button mat-raised-button 
                       color="primary" 
-                      type="submit" 
-                      [disabled]="songForm.invalid">
-                {{isEditing ? 'Update' : 'Create'}}
+                      type="submit"
+                      [disabled]="!canSubmit()">
+                {{isEditing ? 'Update' : 'Create'}} Song
               </button>
             </div>
           </form>
@@ -133,35 +147,32 @@ import { environment } from '../../../../../environments/environment';
       padding: 20px;
     }
 
-    .file-upload {
-      margin-bottom: 20px;
-    }
-
-    .file-label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 500;
-    }
-
-    .file-input-container {
+    .file-inputs {
       display: flex;
-      align-items: center;
-      gap: 16px;
+      gap: 20px;
+      margin: 20px 0;
     }
 
-    .file-input {
-      display: none;
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
     }
 
-    .file-name {
-      margin-left: 8px;
-      color: rgba(0, 0, 0, 0.87);
+    mat-form-field {
+      width: 100%;
+    }
+
+    .preview-section {
+      display: flex;
+      gap: 20px;
+      margin: 20px 0;
     }
 
     .image-preview {
-      width: 128px;
-      height: 128px;
-      border: 1px solid #ddd;
+      width: 200px;
+      height: 200px;
       border-radius: 4px;
       overflow: hidden;
     }
@@ -172,117 +183,175 @@ import { environment } from '../../../../../environments/environment';
       object-fit: cover;
     }
 
-    .form-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 16px;
-      margin-top: 20px;
+    .audio-preview {
+      flex: 1;
+      min-width: 0;
     }
 
-    mat-form-field {
+    .audio-preview audio {
       width: 100%;
+    }
+
+    .file-input-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .file-name {
+      color: rgba(0,0,0,0.6);
+      font-size: 14px;
     }
   `]
 })
-export class SongFormComponent implements OnInit {
+export class SongFormComponent implements OnInit, OnDestroy {
   songForm: FormGroup;
   isEditing = false;
-  songId?: string;
-  audioFile?: File;
-  imageFile?: File;
-  imagePreview?: string;
-  currentImageUrl?: string;
+  songId?: number;
+  selectedAudioFile: File | null = null;
+  selectedImageFile: File | null = null;
+  imagePreviewUrl?: SafeUrl;
+  audioPreviewUrl?: SafeUrl;
+  albums: Album[] = [];
+  loading$ = this.store.select(selectSongsLoading);
+  error$ = this.store.select(selectSongsError);
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
     private songService: SongService,
+    private albumService: AlbumService,
+    private route: ActivatedRoute,
     private router: Router,
-    private route: ActivatedRoute
+    private store: Store,
+    private sanitizer: DomSanitizer,
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
   ) {
     this.songForm = this.fb.group({
-      title: ['', Validators.required],
+      title: [''],
       artist: ['', Validators.required],
-      trackNumber: [1, Validators.required],
+      trackNumber: [1, [Validators.required, Validators.min(1)]],
       description: [''],
+      albumId: [null],
       audioFileId: [''],
       imageFileId: [''],
-      albumId: ['']
+      category: ['', Validators.required],
+      genre: ['', Validators.required]
     });
   }
 
   ngOnInit(): void {
-    this.songId = this.route.snapshot.paramMap.get('id') ?? undefined;
+    this.loadAlbums();
+    const idParam = this.route.snapshot.paramMap.get('id');
+    this.songId = idParam ? +idParam : undefined;
     if (this.songId) {
       this.isEditing = true;
       this.loadSong();
     }
   }
 
+  loadAlbums() {
+    this.albumService.getAlbums(0, 1000).subscribe({
+      next: (response) => {
+        if (response?.success && response?.data) {
+          this.albums = response.data.content;
+        }
+      },
+      error: (error) => console.error('Error loading albums:', error)
+    });
+  }
+
   loadSong(): void {
-    if (this.songId) {
-      this.songService.getSongById(this.songId).subscribe(response => {
-        if (response.success && response.data) {
+    this.songService.getSongById(this.songId!).subscribe({
+      next: (response) => {
+        if (response.data) {
           this.songForm.patchValue(response.data);
           if (response.data.imageFileId) {
-            this.currentImageUrl = `${environment.apiUrl}/files/${response.data.imageFileId}`;
+            this.imagePreviewUrl = `${environment.apiUrl}/files/${response.data.imageFileId}`;
+          }
+          if (response.data.audioFileId) {
+            this.audioPreviewUrl = `${environment.apiUrl}/files/${response.data.audioFileId}`;
           }
         }
+      },
+      error: (error) => console.error('Error loading song:', error)
+    });
+  }
+
+  onAudioFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      this.ngZone.run(() => {
+        this.selectedAudioFile = file;
+        
+        // Set title from filename and mark as valid
+        const fileName = file.name.replace(/\.[^/.]+$/, "");
+        this.songForm.patchValue({ 
+          title: fileName,
+          artist: this.songForm.get('artist')?.value || '',
+          trackNumber: this.songForm.get('trackNumber')?.value || 1
+        });
+
+        // Create audio preview
+        const blobUrl = URL.createObjectURL(file);
+        this.audioPreviewUrl = this.sanitizer.bypassSecurityTrustUrl(blobUrl);
+        
+        this.cdr.detectChanges();
       });
     }
   }
 
-  onAudioFileSelected(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
+  onImageFileSelected(event: any): void {
+    const file = event.target.files[0];
     if (file) {
-      this.audioFile = file;
-      // Extract title from filename if title is empty
-      if (!this.songForm.get('title')?.value) {
-        const title = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
-        this.songForm.patchValue({ title });
-      }
-    }
-  }
-
-  onImageFileSelected(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (file) {
-      this.imageFile = file;
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = () => {
-        this.imagePreview = reader.result as string;
-      };
-      reader.readAsDataURL(file);
+      this.ngZone.run(() => {
+        this.selectedImageFile = file;
+        
+        // Create safe image preview URL
+        const reader = new FileReader();
+        reader.onload = () => {
+          this.imagePreviewUrl = this.sanitizer.bypassSecurityTrustUrl(reader.result as string);
+          
+          // Manually trigger change detection
+          this.cdr.detectChanges();
+        };
+        reader.readAsDataURL(file);
+      });
     }
   }
 
   onSubmit(): void {
-    if (this.songForm.valid) {
+    if (this.canSubmit()) {
       const formData = new FormData();
-      Object.keys(this.songForm.value).forEach(key => {
-        if (this.songForm.value[key]) {
-          formData.append(key, this.songForm.value[key]);
-        }
-      });
-
-      if (this.audioFile) {
-        formData.append('audioFile', this.audioFile);
-      }
-      if (this.imageFile) {
-        formData.append('imageFile', this.imageFile);
+      formData.append('title', this.songForm.get('title')?.value);
+      formData.append('artist', this.songForm.get('artist')?.value);
+      formData.append('trackNumber', this.songForm.get('trackNumber')?.value);
+      formData.append('audioFile', this.selectedAudioFile!);
+      
+      if (this.selectedImageFile) {
+        formData.append('imageFile', this.selectedImageFile);
       }
 
-      const request = this.isEditing
-        ? this.songService.updateSong(this.songId!, formData)
-        : this.songService.createSong(formData);
-
-      request.subscribe(() => {
-        this.router.navigate(['/admin/songs']);
-      });
+      this.store.dispatch(SongActions.createSong({ song: formData }));
     }
   }
 
   goBack(): void {
     this.router.navigate(['/admin/songs']);
+  }
+
+  canSubmit(): boolean {
+    const artistValid = this.songForm.get('artist')?.valid ?? false;
+    const trackNumberValid = this.songForm.get('trackNumber')?.valid ?? false;
+    return artistValid && trackNumberValid && !!this.selectedAudioFile;
+  }
+
+  ngOnDestroy(): void {
+    if (this.audioPreviewUrl) {
+      URL.revokeObjectURL(this.audioPreviewUrl as string);
+    }
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 } 

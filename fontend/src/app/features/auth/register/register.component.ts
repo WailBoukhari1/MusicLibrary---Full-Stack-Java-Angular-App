@@ -139,8 +139,10 @@ export class RegisterComponent {
   onSubmit(): void {
     if (this.registerForm.valid) {
       const { username, email, password } = this.registerForm.value;
-      this.store.dispatch(AuthActions.registerRequest({ 
-        request: { username, email, password } 
+      this.store.dispatch(AuthActions.register({ 
+        username, 
+        email, 
+        password 
       }));
     }
   }

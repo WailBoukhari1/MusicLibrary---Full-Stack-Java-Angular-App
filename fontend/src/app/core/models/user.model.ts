@@ -2,9 +2,13 @@ export interface User {
   id: string;
   username: string;
   email: string;
+  firstName?: string;
+  lastName?: string;
+  avatarUrl?: string;
   roles: string[];
-  active: boolean;
+  active?: boolean;
   createdAt: Date;
+  updatedAt?: Date;
 }
 
 export interface UserResponse {
@@ -15,12 +19,6 @@ export interface UserResponse {
 
 export interface UsersResponse {
   success: boolean;
-  data: {
-    content: User[];
-    totalElements: number;
-    totalPages: number;
-    size: number;
-    number: number;
-  };
+  data: User[];
   error?: string;
 } 

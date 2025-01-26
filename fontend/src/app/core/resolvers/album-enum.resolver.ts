@@ -3,7 +3,7 @@ import { Resolve } from '@angular/router';
 import { forkJoin, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { EnumService } from '../services/enum.service';
-import { CategoryEnum, GenreEnum } from '../models/enums';
+import { CategoryEnum, GenreEnum } from '../models/enums.model';
 import { ApiResponse } from '../models/api-response.model';
 
 export interface AlbumEnums {

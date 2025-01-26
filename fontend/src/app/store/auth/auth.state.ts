@@ -14,4 +14,4 @@ export const initialAuthState: AuthState = {
   isAuthenticated: false,
   loading: false,
   error: null
-}; 
+};

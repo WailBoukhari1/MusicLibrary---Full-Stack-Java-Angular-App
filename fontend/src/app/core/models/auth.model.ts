@@ -1,3 +1,5 @@
+import { User } from './user.model';
+
 export interface LoginRequest {
   username: string;
   password: string;
@@ -10,15 +12,20 @@ export interface RegisterRequest {
 }
 
 export interface AuthResponse {
-  token: string;
-  refreshToken: string;
-  id: string;
-  username: string;
-  email: string;
-  roles: string[];
-  active: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  success: boolean;
+  data: {
+    token: string;
+    refreshToken: string;
+    username: string;
+    roles: string[];
+  };
+  error: string | null;
+}
+
+export interface UserResponse {
+  success: boolean;
+  data: User;
+  message?: string;
 }
 
 export interface RefreshTokenRequest {
@@ -28,5 +35,5 @@ export interface RefreshTokenRequest {
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
-  error?: string;
+  message?: string;
 } 

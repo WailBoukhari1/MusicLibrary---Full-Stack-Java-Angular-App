@@ -11,9 +11,11 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { AlbumActions } from '../../../../store/album/album.actions';
 import { selectAlbumError, selectAlbumLoading } from '../../../../store/album/album.selectors';
-import { CategoryEnum, GenreEnum } from '../../../../core/models/enums';
+import { CategoryEnum, GenreEnum } from '../../../../core/models/enums.model';
 import { Subject, takeUntil } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
+import { EnumService } from '../../../../core/services/enum.service';
+import { EnumValue } from '../../../../core/models/enums.model';
 
 @Component({
   selector: 'app-album-form',
@@ -62,6 +64,9 @@ import { environment } from '../../../../../environments/environment';
                   {{category.displayName}}
                 </mat-option>
               </mat-select>
+              <mat-error *ngIf="albumForm.get('category')?.hasError('required')">
+                Category is required
+              </mat-error>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -71,6 +76,9 @@ import { environment } from '../../../../../environments/environment';
                   {{genre.displayName}}
                 </mat-option>
               </mat-select>
+              <mat-error *ngIf="albumForm.get('genre')?.hasError('required')">
+                Genre is required
+              </mat-error>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -148,8 +156,8 @@ export class AlbumFormComponent implements OnInit, OnDestroy, AfterViewInit {
   selectedFile: File | null = null;
   imagePreview: string | null = null;
   currentImageUrl: string | null = null;
-  categories: CategoryEnum[] = [];
-  genres: GenreEnum[] = [];
+  categories: EnumValue[] = [];
+  genres: EnumValue[] = [];
   loading$ = this.store.select(selectAlbumLoading);
   error$ = this.store.select(selectAlbumError);
   private destroy$ = new Subject<void>();
@@ -160,7 +168,8 @@ export class AlbumFormComponent implements OnInit, OnDestroy, AfterViewInit {
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
-    private store: Store
+    private store: Store,
+    private enumService: EnumService
   ) {
     this.initForm();
   }
@@ -208,16 +217,11 @@ export class AlbumFormComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnInit() {
+    this.loadEnums();
     // Combine both data subscriptions into one
     this.route.data.pipe(
       takeUntil(this.destroy$)
     ).subscribe(data => {
-      // Handle enums
-      if (data['enums']) {
-        this.categories = data['enums'].categories;
-        this.genres = data['enums'].genres;
-      }
-
       // Handle album data for edit mode
       if (data['albumData']?.success && data['albumData'].data) {
         this.isEditMode = true;
@@ -238,6 +242,20 @@ export class AlbumFormComponent implements OnInit, OnDestroy, AfterViewInit {
     // Handle store subscriptions
     this.loading$ = this.store.select(selectAlbumLoading);
     this.error$ = this.store.select(selectAlbumError);
+  }
+
+  loadEnums() {
+    this.enumService.getCategories().subscribe(response => {
+      if (response?.success && response.data) {
+        this.categories = response.data;
+      }
+    });
+
+    this.enumService.getGenres().subscribe(response => {
+      if (response?.success && response.data) {
+        this.genres = response.data;
+      }
+    });
   }
 
   onFileSelected(event: Event) {

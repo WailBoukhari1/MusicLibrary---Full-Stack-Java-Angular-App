@@ -1,27 +1,31 @@
+import { CategoryEnum, GenreEnum } from './enums.model';
+import { Album } from './album.model';
+
 export interface Song {
-  id?: string;
+  id: number;
   title: string;
   artist: string;
-  trackNumber: number;
-  description?: string;
+  albumId?: string;
+  album?: Album;
+  duration: number;
+  audioUrl: string;
+  coverUrl?: string;
   audioFileId?: string;
   imageFileId?: string;
-  duration?: number;
-  albumId?: string;
+  category?: string;
+  genre?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 export interface SongResponse {
-  id: string;
-  title: string;
-  artist: string;
-  trackNumber: number;
-  description: string;
-  audioFileId: string;
-  imageFileId: string;
-  duration: number;
-  albumId: string;
-  createdAt: Date;
-  updatedAt: Date;
+  success: boolean;
+  data: Song;
+  error?: string;
+}
+
+export interface SongsResponse {
+  success: boolean;
+  data: Song[];
+  error?: string;
 } 

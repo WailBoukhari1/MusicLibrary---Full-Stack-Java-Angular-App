@@ -124,8 +124,9 @@ export class LoginComponent {
   onSubmit(): void {
     if (this.loginForm.valid) {
       const { username, password } = this.loginForm.value;
-      this.store.dispatch(AuthActions.loginRequest({ 
-        request: { username, password } 
+      this.store.dispatch(AuthActions.login({ 
+        username, 
+        password 
       }));
     }
   }

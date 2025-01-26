@@ -11,20 +11,18 @@ export interface EnumValue {
   export interface GenreEnum extends EnumValue {}
 
   export class EnumMapper {
-    static toEnumValues<T extends EnumValue>(response: EnumResponse<T> | null | undefined): T[] {
-      if (!response) return [];
-      
-      return Object.entries(response).map(([name, displayName]) => ({
-        name,
-        displayName
-      })) as T[];
-    }
-
     static getDisplayName(enumValues: EnumValue[], name: string): string {
       return enumValues.find(value => value.name === name)?.displayName || name;
     }
 
     static getName(enumValues: EnumValue[], displayName: string): string {
       return enumValues.find(value => value.displayName === displayName)?.name || displayName;
+    }
+
+    static toEnumValues(values: any[]): EnumValue[] {
+      return values.map(value => ({
+        name: value.name,
+        displayName: value.displayName
+      }));
     }
   }

@@ -1,5 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { Store } from '@ngrx/store';
+import { AuthActions } from './store/auth/auth.actions';
+import { AuthService } from './core/services/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -8,6 +11,15 @@ import { RouterOutlet } from '@angular/router';
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
+  constructor(private store: Store, private authService: AuthService) {}
+
+  ngOnInit() {
+    if (this.authService.isAuthenticated()) {
+      const user = this.authService.getStoredUser();
+      this.store.dispatch(AuthActions.loginSuccess({ user, token: localStorage.getItem('token') || '' }));
+    }
+  }
+
   title = 'fontend';
 }

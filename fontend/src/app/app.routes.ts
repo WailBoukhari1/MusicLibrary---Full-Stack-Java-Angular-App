@@ -1,46 +1,51 @@
 import { Routes } from '@angular/router';
-import { AuthGuard } from './core/guards/auth.guard';
+import { AuthGuard, adminGuard } from './core/guards/auth.guard';
+import { AdminLayoutComponent } from './shared/layouts/admin/admin-layout.component';
+import { UserLayoutComponent } from './shared/layouts/user/user-layout.component';
 
-export const routes: Routes = [
+export const APP_ROUTES: Routes = [
+  // Default redirect
   {
     path: '',
-    redirectTo: 'user/library',
+    redirectTo: 'auth/login',
     pathMatch: 'full'
   },
-  // Public routes
+
+  // Auth routes (public)
   {
     path: 'auth',
     loadChildren: () => import('./features/auth/auth.routes').then(m => m.AUTH_ROUTES)
   },
-  // User routes
+
+  // User routes (protected)
   {
-    path: 'user',
-    loadComponent: () => import('./layouts/user/user-layout.component').then(m => m.UserLayoutComponent),
+    path: '',
+    component: UserLayoutComponent,
     canActivate: [AuthGuard],
     children: [
       {
-        path: '',
+        path: 'user',
         loadChildren: () => import('./features/user/user.routes').then(m => m.USER_ROUTES)
       }
     ]
   },
-  // Admin routes
+
+  // Admin routes (protected + admin only)
   {
-    path: 'admin',
-    loadComponent: () => import('./layouts/admin/admin-layout.component')
-      .then(m => m.AdminLayoutComponent),
-    canActivate: [AuthGuard],
-    data: { roles: ['ADMIN'] },
+    path: '',
+    component: AdminLayoutComponent,
+    canActivate: [AuthGuard, adminGuard],
     children: [
       {
-        path: '',
+        path: 'admin',
         loadChildren: () => import('./features/admin/admin.routes').then(m => m.ADMIN_ROUTES)
       }
     ]
   },
-  // Fallback route
+
+  // Catch all route
   {
     path: '**',
-    redirectTo: 'user/library'
+    redirectTo: 'auth/login'
   }
 ];

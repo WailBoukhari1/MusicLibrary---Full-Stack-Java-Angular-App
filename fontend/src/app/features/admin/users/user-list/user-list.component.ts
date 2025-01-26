@@ -62,11 +62,11 @@ import { of } from 'rxjs';
 
           <!-- Roles Column -->
           <ng-container matColumnDef="roles">
-            <th mat-header-cell *matHeaderCellDef> Roles </th>
+            <th mat-header-cell *matHeaderCellDef> Role </th>
             <td mat-cell *matCellDef="let user">
-              <mat-select [value]="user.roles" multiple 
-                         (selectionChange)="updateRoles(user, $event.value)"
-                         [disabled]="isUpdating">
+              <mat-select [value]="user.role" 
+                          (selectionChange)="updateRole(user, $event.value)"
+                          [disabled]="isUpdating">
                 <mat-option value="ADMIN">Admin</mat-option>
                 <mat-option value="USER">User</mat-option>
               </mat-select>
@@ -171,39 +171,34 @@ export class UserListComponent implements OnInit {
   }
 
   loadUsers() {
-    this.isLoading = true;
     this.userService.getUsers(this.currentPage, this.pageSize)
-      .pipe(
-        catchError(error => {
+      .subscribe({
+        next: (response) => {
+          this.users = response.content;
+          this.totalElements = response.totalElements;
+        },
+        error: (error) => {
           this.showError('Failed to load users');
-          return of({ success: false, data: { content: [], totalElements: 0, totalPages: 0, size: 10, number: 0 } });
-        }),
-        finalize(() => this.isLoading = false)
-      )
-      .subscribe(response => {
-        if (response.success) {
-          this.users = response.data.content;
-          this.totalElements = response.data.totalElements;
         }
       });
   }
 
-  updateRoles(user: User, newRoles: string[]) {
+  updateRole(user: User, newRole: string) {
     this.isUpdating = true;
-    this.userService.updateUserRoles(user.id, newRoles)
+    this.userService.updateUserRole(user.id, newRole)
       .pipe(
         catchError(error => {
-          this.showError('Failed to update user roles');
-          return of({ success: false, data: user });
+          this.showError('Failed to update user role');
+          return of(null);
         }),
         finalize(() => this.isUpdating = false)
       )
       .subscribe(response => {
-        if (response.success) {
-          this.showSuccess('User roles updated successfully');
+        if (response?.data) {
+          this.showSuccess('User role updated successfully');
           const index = this.users.findIndex(u => u.id === user.id);
           if (index !== -1) {
-            this.users[index] = { ...user, roles: newRoles };
+            this.users[index] = { ...user, roles: [newRole] };
             this.table.renderRows();
           }
         }
@@ -222,7 +217,7 @@ export class UserListComponent implements OnInit {
           finalize(() => this.isUpdating = false)
         )
         .subscribe(response => {
-          if (response.success) {
+          if (response?.data) {
             this.showSuccess('User deleted successfully');
             this.loadUsers(); // Reload the entire list
           }

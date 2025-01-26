@@ -1,11 +1,10 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Album } from '../models/album.model';
+import { Album, AlbumResponse, AlbumsResponse } from '../models/album.model';
 import { ApiResponse } from '../models/api-response.model';
 import { Page } from '../models/page.model';
-import { filter, map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -21,9 +20,10 @@ export class AlbumService {
   }
 
   getAlbums(page: number = 0, size: number = 10): Observable<ApiResponse<Page<Album>>> {
-    return this.http.get<ApiResponse<Page<Album>>>(`${this.apiUrl}`, {
-      params: { page: page.toString(), size: size.toString() }
-    });
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+    return this.http.get<ApiResponse<Page<Album>>>(`${this.apiUrl}`, { params });
   }
 
   createAlbum(albumData: FormData): Observable<ApiResponse<Album>> {
@@ -39,12 +39,25 @@ export class AlbumService {
   }
 
   deleteAlbum(id: string): Observable<ApiResponse<void>> {
-    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`, {
-      headers: this.getHeaders()
-    });
+    const params = new HttpParams().set('deleteSongs', 'true');
+    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`, { params });
   }
 
   getAlbum(id: number | string): Observable<ApiResponse<Album>> {
     return this.http.get<ApiResponse<Album>>(`${this.apiUrl}/${id}`);
   }
+
+  getAllAlbums(): Observable<AlbumsResponse> {
+    return this.http.get<AlbumsResponse>(this.apiUrl);
+  }
+
+  searchAlbums(query: string): Observable<AlbumsResponse> {
+    return this.http.get<AlbumsResponse>(`${this.apiUrl}/search?query=${query}`);
+  }
+
+  getAlbumById(id: string): Observable<AlbumResponse> {
+    return this.http.get<AlbumResponse>(`${this.apiUrl}/${id}`);
+  }
+
+
 }

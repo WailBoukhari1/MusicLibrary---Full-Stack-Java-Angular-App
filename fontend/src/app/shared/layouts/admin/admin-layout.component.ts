@@ -8,7 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { Store } from '@ngrx/store';
-import { AuthActions } from '../../store/auth/auth.actions';
+import { AuthActions } from '../../../store/auth/auth.actions';
 
 @Component({
   selector: 'app-admin-layout',
@@ -115,6 +115,6 @@ export class AdminLayoutComponent {
   constructor(private store: Store) {}
 
   logout() {
-    this.store.dispatch(AuthActions.logoutRequest());
+    this.store.dispatch(AuthActions.logout());
   }
 } 

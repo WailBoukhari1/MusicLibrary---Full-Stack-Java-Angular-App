@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { Song } from '../models/song.model';
 import { environment } from '../../../environments/environment';
-import { Song, SongResponse } from '../models/song.model';
 import { ApiResponse } from '../models/api-response.model';
 import { Page } from '../models/page.model';
 
@@ -14,34 +14,32 @@ export class SongService {
 
   constructor(private http: HttpClient) {}
 
-  getAllSongs(page = 0, size = 10): Observable<ApiResponse<Page<SongResponse>>> {
+  getSongs(page: number = 0, size: number = 10): Observable<ApiResponse<Page<Song>>> {
     const params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
-    return this.http.get<ApiResponse<Page<SongResponse>>>(this.apiUrl, { params });
+    
+    return this.http.get<ApiResponse<Page<Song>>>(this.apiUrl, { params });
   }
 
-  getSongById(id: string): Observable<ApiResponse<SongResponse>> {
-    return this.http.get<ApiResponse<SongResponse>>(`${this.apiUrl}/${id}`);
+  createSong(songData: FormData): Observable<ApiResponse<Song>> {
+    return this.http.post<ApiResponse<Song>>(this.apiUrl, songData);
   }
 
-  createSong(song: FormData): Observable<ApiResponse<SongResponse>> {
-    return this.http.post<ApiResponse<SongResponse>>(this.apiUrl, song);
+  updateSong(id: number, songData: FormData): Observable<ApiResponse<Song>> {
+    return this.http.put<ApiResponse<Song>>(`${this.apiUrl}/${id}`, songData);
   }
 
-  updateSong(id: string, song: FormData): Observable<ApiResponse<SongResponse>> {
-    return this.http.put<ApiResponse<SongResponse>>(`${this.apiUrl}/${id}`, song);
-  }
-
-  deleteSong(id: string): Observable<ApiResponse<void>> {
+  deleteSong(id: number): Observable<ApiResponse<void>> {
     return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`);
   }
 
-  searchSongs(query: string, page = 0, size = 10): Observable<ApiResponse<Page<SongResponse>>> {
-    const params = new HttpParams()
-      .set('query', query)
-      .set('page', page.toString())
-      .set('size', size.toString());
-    return this.http.get<ApiResponse<Page<SongResponse>>>(`${this.apiUrl}/search`, { params });
+  searchSongs(query: string): Observable<ApiResponse<Song[]>> {
+    const params = new HttpParams().set('query', query);
+    return this.http.get<ApiResponse<Song[]>>(`${this.apiUrl}/search`, { params });
+  }
+
+  getSongById(id: number): Observable<ApiResponse<Song>> {
+    return this.http.get<ApiResponse<Song>>(`${this.apiUrl}/${id}`);
   }
 } 

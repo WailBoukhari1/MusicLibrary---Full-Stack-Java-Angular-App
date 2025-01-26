@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { BehaviorSubject, Observable, tap, throwError } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { User } from '../models/user.model';
-import { ApiResponse, AuthResponse, LoginRequest, RegisterRequest } from '../models/auth.model';
+import { ApiResponse, AuthResponse, LoginRequest, RegisterRequest, UserResponse } from '../models/auth.model';
 import { JwtHelperService } from '@auth0/angular-jwt';
 
 @Injectable({
@@ -51,35 +51,38 @@ export class AuthService {
     }
   }
 
-  login(username: string, password: string): Observable<ApiResponse<AuthResponse>> {
-    const request: LoginRequest = { username, password };
-    return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/login`, request)
+  login(credentials: LoginRequest): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/login`, credentials)
       .pipe(
         tap(response => {
-          if (response.success && response.data) {
-            this.setTokens(response.data.token, response.data.refreshToken);
-            this.handleAuthResponse(response.data);
-          }
+          localStorage.setItem('token', response.data.token);
+          // Store user data based on the token response
+          const userData = {
+            username: response.data.username,
+            roles: response.data.roles
+          };
+          localStorage.setItem('user', JSON.stringify(userData));
         })
       );
   }
 
-  register(username: string, email: string, password: string): Observable<ApiResponse<User>> {
-    const request: RegisterRequest = { username, email, password };
-    return this.http.post<ApiResponse<User>>(`${this.apiUrl}/register`, request);
+  register(username: string, email: string, password: string): Observable<UserResponse> {
+    return this.http.post<UserResponse>(`${this.apiUrl}/register`, { username, email, password });
   }
 
   private handleAuthResponse(response: AuthResponse): void {
-    const user: User = {
-      id: response.id,
-      username: response.username,
-      email: response.email,
-      roles: response.roles,
-      active: response.active || true,
-      createdAt: response.createdAt,
-    };
-    this.currentUserSubject.next(user);
-    this.redirectBasedOnRole(response.roles.includes('ADMIN'));
+    if (response.data) {
+      const user: User = {
+        id: response.data.username,
+        username: response.data.username,
+        email: '',
+        roles: response.data.roles,
+        active: true,
+        createdAt: new Date(),
+      };
+      this.currentUserSubject.next(user);
+      this.redirectBasedOnRole(user.roles.includes('ADMIN'));
+    }
   }
 
   private redirectBasedOnRole(isAdmin: boolean): void {
@@ -87,21 +90,11 @@ export class AuthService {
     this.router.navigate([route]);
   }
 
-  logout(): Observable<ApiResponse<void>> {
-    const refreshToken = this.getRefreshToken();
-    const token = this.getToken();
-    
-    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/logout`, { refreshToken }, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    }).pipe(
-      tap(() => {
-        this.clearTokens();
-        this.currentUserSubject.next(null);
-        this.router.navigate(['/auth/login']);
-      })
-    );
+  logout(): Observable<void> {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    this.router.navigate(['/login']);
+    return this.http.post<void>(`${this.apiUrl}/auth/logout`, {});
   }
 
   getToken(): string | null {
@@ -158,40 +151,46 @@ export class AuthService {
     return roles.includes('ADMIN');
   }
 
-  getCurrentUser(): Observable<ApiResponse<User>> {
-    return this.http.get<ApiResponse<User>>(`${this.apiUrl}/me`);
+  getCurrentUser(): Observable<UserResponse> {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return throwError(() => new Error('No token found'));
+    }
+    return this.http.get<UserResponse>(`${this.apiUrl}/me`);
   }
 
   validateToken(): Observable<ApiResponse<boolean>> {
-    return this.http.get<ApiResponse<boolean>>(`${this.apiUrl}/validate`);
+    return this.http.get<ApiResponse<boolean>>(`${this.apiUrl}/auth/validate`);
   }
 
-  refreshToken(): Observable<ApiResponse<AuthResponse>> {
-    const refreshToken = this.getRefreshToken();
-    return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/refresh`, { refreshToken })
-      .pipe(
-        tap(response => {
-          if (response.success && response.data) {
-            this.startRefreshTokenTimer(response.data);
-          }
-        })
-      );
+  refreshToken(token: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/refresh`, { token });
   }
 
   private startRefreshTokenTimer(authResponse: AuthResponse) {
-    // Parse the JWT token to get expiration
-    const jwtToken = JSON.parse(atob(authResponse.token.split('.')[1]));
-    const expires = new Date(jwtToken.exp * 1000);
-    const timeout = expires.getTime() - Date.now() - (60 * 1000); // Refresh 1 minute before expiry
-    
-    this.refreshTokenTimeout = setTimeout(() => {
-      this.refreshToken().subscribe();
-    }, timeout);
+    if (authResponse.data?.token) {
+      const jwtToken = JSON.parse(atob(authResponse.data.token.split('.')[1]));
+      const expires = new Date(jwtToken.exp * 1000);
+      const timeout = expires.getTime() - Date.now() - (60 * 1000);
+      
+      this.refreshTokenTimeout = setTimeout(() => {
+        this.refreshToken(authResponse.data.token).subscribe();
+      }, timeout);
+    }
   }
 
   private stopRefreshTokenTimer() {
     if (this.refreshTokenTimeout) {
       clearTimeout(this.refreshTokenTimeout);
     }
+  }
+
+  isAuthenticated(): boolean {
+    return !!localStorage.getItem('token');
+  }
+
+  getStoredUser() {
+    const user = localStorage.getItem('user');
+    return user ? JSON.parse(user) : null;
   }
 } 
