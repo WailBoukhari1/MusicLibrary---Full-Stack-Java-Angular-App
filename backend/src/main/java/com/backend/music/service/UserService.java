@@ -8,9 +8,14 @@ import java.util.Set;
 
 public interface UserService {
     Page<UserResponse> getAllUsers(Pageable pageable);
+    
     UserResponse getUserById(String id);
+    
     UserResponse createUser(RegisterRequest request);
+    
     UserResponse updateUserRoles(String id, Set<String> roles);
-    void deleteUser(String id);
+    
     UserResponse getUserByUsername(String username);
+    
+    UserResponse toggleUserStatus(String id);
 } 

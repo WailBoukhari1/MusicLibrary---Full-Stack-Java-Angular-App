@@ -35,6 +35,26 @@ export const UserActions = createActionGroup({
     'Load Favorites Failure': props<{ error: string }>(),
     
     // Clear User State
-    'Clear User': emptyProps()
+    'Clear User': emptyProps(),
+
+    // Load Users
+    'Load Users': emptyProps(),
+    'Load Users Success': props<{ users: User[] }>(),
+    'Load Users Failure': props<{ error: string }>(),
+
+    // Update User Roles
+    'Update User Role': props<{ userId: string; roles: string[] }>(),
+    'Update User Role Success': props<{ user: User }>(),
+    'Update User Role Failure': props<{ error: string }>(),
+
+    // Delete User
+    'Delete User': props<{ userId: string }>(),
+    'Delete User Success': props<{ userId: string }>(),
+    'Delete User Failure': props<{ error: string }>(),
+
+    // Toggle User Status
+    'Toggle User Status': props<{ userId: string }>(),
+    'Toggle User Status Success': props<{ user: User }>(),
+    'Toggle User Status Failure': props<{ error: string }>()
   }
 }); 

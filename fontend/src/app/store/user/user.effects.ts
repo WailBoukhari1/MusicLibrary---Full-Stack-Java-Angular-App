@@ -7,90 +7,59 @@ import { of } from 'rxjs';
 
 @Injectable()
 export class UserEffects {
-  loadProfile$ = createEffect(() =>
+  loadUsers$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(UserActions.loadProfile),
+      ofType(UserActions.loadUsers),
       mergeMap(() =>
-        this.userService.getCurrentUserProfile().pipe(
-          map(response => UserActions.loadProfileSuccess({ user: response.data })),
-          catchError(error => of(UserActions.loadProfileFailure({ 
-            error: error.error?.message || 'Failed to load profile' 
+        this.userService.getAllUsers().pipe(
+          map(response => {
+            if (!response.data?.content) {
+              throw new Error('No data received');
+            }
+            return UserActions.loadUsersSuccess({ 
+              users: response.data.content 
+            });
+          }),
+          catchError(error => of(UserActions.loadUsersFailure({
+            error: error.message || 'Failed to load users'
           })))
         )
       )
     )
   );
 
-  updateProfile$ = createEffect(() =>
+  updateUserRole$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(UserActions.updateProfile),
-      mergeMap(({ user }) =>
-        this.userService.updateProfile(user).pipe(
-          map(response => UserActions.updateProfileSuccess({ user: response.data })),
-          catchError(error => of(UserActions.updateProfileFailure({ 
-            error: error.error?.message || 'Failed to update profile' 
+      ofType(UserActions.updateUserRole),
+      mergeMap(({ userId, roles }) =>
+        this.userService.updateUserRoles(userId, roles).pipe(
+          map(response => {
+            if (!response.data) {
+              throw new Error('No data received');
+            }
+            return UserActions.updateUserRoleSuccess({ user: response.data });
+          }),
+          catchError(error => of(UserActions.updateUserRoleFailure({
+            error: error.message || 'Failed to update user role'
           })))
         )
       )
     )
   );
 
-  updateAvatar$ = createEffect(() =>
+  toggleUserStatus$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(UserActions.updateAvatar),
-      mergeMap(({ formData }) =>
-        this.userService.updateAvatar(formData).pipe(
-          map(response => UserActions.updateAvatarSuccess({ 
-            avatarUrl: response.data.avatarUrl 
-          })),
-          catchError(error => of(UserActions.updateAvatarFailure({ 
-            error: error.error?.message || 'Failed to update avatar' 
-          })))
-        )
-      )
-    )
-  );
-
-  changePassword$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(UserActions.changePassword),
-      mergeMap(({ currentPassword, newPassword }) =>
-        this.userService.changePassword(currentPassword, newPassword).pipe(
-          map(() => UserActions.changePasswordSuccess()),
-          catchError(error => of(UserActions.changePasswordFailure({ 
-            error: error.error?.message || 'Failed to change password' 
-          })))
-        )
-      )
-    )
-  );
-
-  loadPlaylists$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(UserActions.loadPlaylists),
-      mergeMap(() =>
-        this.userService.getUserPlaylists().pipe(
-          map(response => UserActions.loadPlaylistsSuccess({ 
-            playlists: response.data 
-          })),
-          catchError(error => of(UserActions.loadPlaylistsFailure({ 
-            error: error.error?.message || 'Failed to load playlists' 
-          })))
-        )
-      )
-    )
-  );
-
-  loadFavorites$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(UserActions.loadFavorites),
-      mergeMap(() =>
-        this.userService.getUserFavorites().pipe(
-          map(response => UserActions.loadFavoritesSuccess({ 
-            favorites: response.data 
-          })),
-          catchError(error => of(UserActions.loadFavoritesFailure({ 
-            error: error.error?.message || 'Failed to load favorites' 
+      ofType(UserActions.toggleUserStatus),
+      mergeMap(({ userId }) =>
+        this.userService.toggleUserStatus(userId).pipe(
+          map(response => {
+            if (!response.data) {
+              throw new Error('No data received');
+            }
+            return UserActions.toggleUserStatusSuccess({ user: response.data });
+          }),
+          catchError(error => of(UserActions.toggleUserStatusFailure({
+            error: error.message || 'Failed to toggle user status'
           })))
         )
       )

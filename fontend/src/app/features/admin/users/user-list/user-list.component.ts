@@ -1,20 +1,24 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatTableModule, MatTable } from '@angular/material/table';
+import { MatTableModule, MatTableDataSource } from '@angular/material/table';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
-import { MatSelectModule } from '@angular/material/select';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTooltipModule } from '@angular/material/tooltip';
-
-import { UserService } from '../../../../core/services/user.service';
+import { Store } from '@ngrx/store';
+import { UserActions } from '../../../../store/user/user.actions';
+import { 
+  selectUsers,
+  selectUserLoading,
+  selectUserError,
+  selectUserTotalElements
+} from '../../../../store/user/user.selectors';
 import { User } from '../../../../core/models/user.model';
-import { catchError, finalize } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-user-list',
@@ -22,71 +26,88 @@ import { of } from 'rxjs';
   imports: [
     CommonModule,
     MatTableModule,
+    MatPaginatorModule,
     MatButtonModule,
     MatIconModule,
     MatCardModule,
-    MatSelectModule,
-    MatDialogModule,
-    MatSnackBarModule,
-    MatPaginatorModule,
     MatProgressSpinnerModule,
+    MatMenuModule,
+    MatCheckboxModule,
     MatTooltipModule
   ],
   template: `
-    <mat-card>
+    <mat-card class="users-container">
+      <mat-card-header>
+        <mat-card-title>Users Management</mat-card-title>
+      </mat-card-header>
+
       <mat-card-content>
-        <div class="loading-shade" *ngIf="isLoading">
+        <div *ngIf="loading$ | async" class="loading-spinner">
           <mat-spinner></mat-spinner>
         </div>
 
-        <table mat-table [dataSource]="users" class="mat-elevation-z8">
-          
+        <div *ngIf="error$ | async as error" class="error-message">
+          {{ error }}
+        </div>
+
+        <table mat-table [dataSource]="dataSource" class="user-table">
           <!-- Username Column -->
           <ng-container matColumnDef="username">
-            <th mat-header-cell *matHeaderCellDef> Username </th>
-            <td mat-cell *matCellDef="let user"> 
-              {{user.username}}
-              <mat-icon *ngIf="!user.active" 
-                       class="inactive-user" 
-                       matTooltip="Inactive User">
-                block
-              </mat-icon>
-            </td>
+            <th mat-header-cell *matHeaderCellDef>Username</th>
+            <td mat-cell *matCellDef="let user">{{ user.username }}</td>
           </ng-container>
 
           <!-- Email Column -->
           <ng-container matColumnDef="email">
-            <th mat-header-cell *matHeaderCellDef> Email </th>
-            <td mat-cell *matCellDef="let user"> {{user.email}} </td>
+            <th mat-header-cell *matHeaderCellDef>Email</th>
+            <td mat-cell *matCellDef="let user">{{ user.email }}</td>
           </ng-container>
 
           <!-- Roles Column -->
           <ng-container matColumnDef="roles">
-            <th mat-header-cell *matHeaderCellDef> Role </th>
-            <td mat-cell *matCellDef="let user">
-              <mat-select [value]="user.role" 
-                          (selectionChange)="updateRole(user, $event.value)"
-                          [disabled]="isUpdating">
-                <mat-option value="ADMIN">Admin</mat-option>
-                <mat-option value="USER">User</mat-option>
-              </mat-select>
-            </td>
+            <th mat-header-cell *matHeaderCellDef>Roles</th>
+            <td mat-cell *matCellDef="let user">{{ user.roles.join(', ') }}</td>
           </ng-container>
 
-          <!-- Created At Column -->
-          <ng-container matColumnDef="createdAt">
-            <th mat-header-cell *matHeaderCellDef> Created At </th>
-            <td mat-cell *matCellDef="let user"> {{user.createdAt | date}} </td>
+          <!-- Status Column -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let user">
+              <span [class.active]="user.active" [class.inactive]="!user.active">
+                {{ user.active ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
           </ng-container>
 
           <!-- Actions Column -->
           <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef> Actions </th>
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
             <td mat-cell *matCellDef="let user">
-              <button mat-icon-button color="warn" 
-                      (click)="deleteUser(user)"
-                      [disabled]="isUpdating">
-                <mat-icon>delete</mat-icon>
+              <!-- Role Menu -->
+              <button mat-icon-button [matMenuTriggerFor]="roleMenu">
+                <mat-icon>admin_panel_settings</mat-icon>
+              </button>
+              <mat-menu #roleMenu="matMenu">
+                <div (click)="$event.stopPropagation()" class="role-menu-content">
+                  <mat-checkbox
+                    [checked]="user.roles.includes('USER')"
+                    (change)="toggleRole(user, 'USER', $event.checked)">
+                    User
+                  </mat-checkbox>
+                  <mat-checkbox
+                    [checked]="user.roles.includes('ADMIN')"
+                    (change)="toggleRole(user, 'ADMIN', $event.checked)">
+                    Admin
+                  </mat-checkbox>
+                </div>
+              </mat-menu>
+
+              <!-- Status Toggle -->
+              <button mat-icon-button 
+                      [color]="user.active ? 'warn' : 'primary'"
+                      [matTooltip]="user.active ? 'Deactivate User' : 'Activate User'"
+                      (click)="onToggleUserStatus(user)">
+                <mat-icon>{{ user.active ? 'person_off' : 'person' }}</mat-icon>
               </button>
             </td>
           </ng-container>
@@ -95,157 +116,118 @@ import { of } from 'rxjs';
           <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
         </table>
 
-        <mat-paginator [length]="totalElements"
-                      [pageSize]="pageSize"
-                      [pageSizeOptions]="[5, 10, 25, 100]"
-                      (page)="onPageChange($event)"
-                      aria-label="Select page">
+        <mat-paginator
+          [length]="totalElements$ | async"
+          [pageSize]="10"
+          [pageSizeOptions]="[5, 10, 25, 100]"
+          (page)="onPageChange($event)">
         </mat-paginator>
       </mat-card-content>
     </mat-card>
   `,
   styles: [`
-    table {
+    .users-container {
+      margin: 20px;
+    }
+
+    .user-table {
       width: 100%;
+      margin-bottom: 20px;
+    }
+
+    .loading-spinner {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+
+    .error-message {
+      color: red;
+      margin: 10px 0;
+      padding: 10px;
+      background-color: #ffebee;
+      border-radius: 4px;
+    }
+
+    .active {
+      color: green;
+    }
+
+    .inactive {
+      color: red;
     }
 
     .mat-column-actions {
       width: 80px;
-      text-align: center;
+      text-align: right;
     }
 
-    .mat-column-roles {
-      width: 200px;
+    .role-menu-content {
+      padding: 8px 16px;
     }
-
-    mat-card {
-      margin: 20px;
-    }
-
-    mat-select {
-      width: 180px;
-    }
-
-    .loading-shade {
-      position: absolute;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      right: 0;
-      background: rgba(0, 0, 0, 0.15);
-      z-index: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .inactive-user {
-      font-size: 16px;
-      height: 16px;
-      width: 16px;
-      margin-left: 8px;
-      vertical-align: middle;
-      color: #999;
+    .role-menu-content mat-checkbox {
+      display: block;
+      margin: 8px 0;
     }
   `]
 })
-export class UserListComponent implements OnInit {
-  users: User[] = [];
-  displayedColumns: string[] = ['username', 'email', 'roles', 'createdAt', 'actions'];
-  isLoading = false;
-  isUpdating = false;
-  totalElements = 0;
-  pageSize = 10;
-  currentPage = 0;
+export class UserListComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+  dataSource = new MatTableDataSource<User>([]);
+  users$ = this.store.select(selectUsers);
+  loading$ = this.store.select(selectUserLoading);
+  error$ = this.store.select(selectUserError);
+  totalElements$ = this.store.select(selectUserTotalElements);
+  displayedColumns = ['username', 'email', 'roles', 'status', 'actions'];
 
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
-  @ViewChild(MatTable) table!: MatTable<User>;
+  constructor(private store: Store) {
+    this.users$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(users => {
+      console.log('Received users:', users);
+      this.dataSource.data = users || [];
+    });
+  }
 
-  constructor(
-    private userService: UserService,
-    private snackBar: MatSnackBar
-  ) {}
-
-  ngOnInit() {
+  ngOnInit(): void {
+    console.log('Component initialized');
     this.loadUsers();
   }
 
-  loadUsers() {
-    this.userService.getUsers(this.currentPage, this.pageSize)
-      .subscribe({
-        next: (response) => {
-          this.users = response.content;
-          this.totalElements = response.totalElements;
-        },
-        error: (error) => {
-          this.showError('Failed to load users');
-        }
-      });
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  updateRole(user: User, newRole: string) {
-    this.isUpdating = true;
-    this.userService.updateUserRole(user.id, newRole)
-      .pipe(
-        catchError(error => {
-          this.showError('Failed to update user role');
-          return of(null);
-        }),
-        finalize(() => this.isUpdating = false)
-      )
-      .subscribe(response => {
-        if (response?.data) {
-          this.showSuccess('User role updated successfully');
-          const index = this.users.findIndex(u => u.id === user.id);
-          if (index !== -1) {
-            this.users[index] = { ...user, roles: [newRole] };
-            this.table.renderRows();
-          }
-        }
-      });
+  loadUsers(): void {
+    console.log('Dispatching loadUsers action');
+    this.store.dispatch(UserActions.loadUsers());
   }
 
-  deleteUser(user: User) {
-    if (confirm(`Are you sure you want to delete user ${user.username}?`)) {
-      this.isUpdating = true;
-      this.userService.deleteUser(user.id)
-        .pipe(
-          catchError(error => {
-            this.showError('Failed to delete user');
-            return of({ success: false, data: user });
-          }),
-          finalize(() => this.isUpdating = false)
-        )
-        .subscribe(response => {
-          if (response?.data) {
-            this.showSuccess('User deleted successfully');
-            this.loadUsers(); // Reload the entire list
-          }
-        });
+  onPageChange(event: PageEvent): void {
+    // Pagination is handled on the frontend since backend doesn't support it
+    // You might want to implement client-side pagination here
+  }
+
+  onEditUser(userId: string): void {
+    // Implement edit user logic
+  }
+
+  onToggleUserStatus(user: User): void {
+    const message = user.active ? 'deactivate' : 'activate';
+    if (confirm(`Are you sure you want to ${message} this user?`)) {
+      this.store.dispatch(UserActions.toggleUserStatus({ userId: user.id }));
     }
   }
 
-  onPageChange(event: any) {
-    this.currentPage = event.pageIndex;
-    this.pageSize = event.pageSize;
-    this.loadUsers();
-  }
-
-  private showSuccess(message: string) {
-    this.snackBar.open(message, 'Close', {
-      duration: 3000,
-      horizontalPosition: 'end',
-      verticalPosition: 'top',
-      panelClass: ['success-snackbar']
-    });
-  }
-
-  private showError(message: string) {
-    this.snackBar.open(message, 'Close', {
-      duration: 5000,
-      horizontalPosition: 'end',
-      verticalPosition: 'top',
-      panelClass: ['error-snackbar']
-    });
+  toggleRole(user: User, role: string, checked: boolean): void {
+    const newRoles = checked 
+      ? [...user.roles, role]
+      : user.roles.filter(r => r !== role);
+    
+    this.store.dispatch(UserActions.updateUserRole({ 
+      userId: user.id, 
+      roles: newRoles 
+    }));
   }
 }

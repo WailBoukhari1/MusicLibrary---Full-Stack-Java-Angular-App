@@ -56,11 +56,11 @@ public class UserController {
             .build());
     }
     
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable String id) {
-        userService.deleteUser(id);
-        return ResponseEntity.ok(ApiResponse.<Void>builder()
+    @PatchMapping("/{id}/toggle-status")
+    public ResponseEntity<ApiResponse<UserResponse>> toggleUserStatus(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.<UserResponse>builder()
             .success(true)
+            .data(userService.toggleUserStatus(id))
             .build());
     }
 } 

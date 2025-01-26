@@ -1,25 +1,10 @@
 import { createReducer, on } from '@ngrx/store';
 import { User } from '../../core/models/user.model';
 import { UserActions } from './user.actions';
-
-export interface UserState {
-  profile: User | null;
-  playlists: any[];
-  favorites: any[];
-  loading: boolean;
-  error: string | null;
-}
-
-const initialState: UserState = {
-  profile: null,
-  playlists: [],
-  favorites: [],
-  loading: false,
-  error: null
-};
+import { initialUserState, UserState } from './user.state';
 
 export const userReducer = createReducer(
-  initialState,
+  initialUserState,
   
   // Load Profile
   on(UserActions.loadProfile, (state) => ({
@@ -117,5 +102,85 @@ export const userReducer = createReducer(
   })),
   
   // Clear User
-  on(UserActions.clearUser, () => initialState)
+  on(UserActions.clearUser, () => initialUserState),
+  
+  // Load Users
+  on(UserActions.loadUsers, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+  
+  on(UserActions.loadUsersSuccess, (state, { users }) => ({
+    ...state,
+    users,
+    loading: false,
+    error: null
+  })),
+  
+  on(UserActions.loadUsersFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  })),
+  
+  // Toggle User Status
+  on(UserActions.toggleUserStatus, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+  
+  on(UserActions.toggleUserStatusSuccess, (state, { user }) => ({
+    ...state,
+    users: state.users.map(u => u.id === user.id ? user : u),
+    loading: false,
+    error: null
+  })),
+  
+  on(UserActions.toggleUserStatusFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  })),
+
+  // Update User Role
+  on(UserActions.updateUserRole, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+
+  on(UserActions.updateUserRoleSuccess, (state, { user }) => ({
+    ...state,
+    users: state.users.map(u => u.id === user.id ? user : u),
+    loading: false,
+    error: null
+  })),
+
+  on(UserActions.updateUserRoleFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  })),
+
+  // Delete User
+  on(UserActions.deleteUser, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+
+  on(UserActions.deleteUserSuccess, (state, { userId }) => ({
+    ...state,
+    users: state.users.filter(user => user.id !== userId),
+    loading: false,
+    error: null
+  })),
+
+  on(UserActions.deleteUserFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  }))
 ); 

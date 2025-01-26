@@ -76,11 +76,13 @@ public class UserServiceImpl implements UserService {
     }
     
     @Override
-    public void deleteUser(String id) {
-        if (!userRepository.existsById(id)) {
-            throw new ResourceNotFoundException("User not found with id: " + id);
-        }
-        userRepository.deleteById(id);
+    public UserResponse toggleUserStatus(String id) {
+        return userRepository.findById(id)
+                .map(user -> {
+                    user.setActive(!user.getActive());
+                    return userMapper.toResponseDto(userRepository.save(user));
+                })
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     }
     
     @Override

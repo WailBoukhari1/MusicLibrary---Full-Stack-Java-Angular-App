@@ -13,9 +13,16 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import java.util.Date;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 
 @Data
 @Document(collection = "users")
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class User implements UserDetails {
     @Id
     private String id;
@@ -32,6 +39,8 @@ public class User implements UserDetails {
     private String password;
     private Boolean active = true;
     private Set<String> roles = new HashSet<>();
+    private Date createdAt;
+    private Date updatedAt;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
