@@ -6,11 +6,14 @@ export interface Album {
   title: string;
   artist: string;
   imageUrl?: string;
+  coverUrl?: string;
   releaseDate?: Date;
   category: string;
   genre: string;
-  songs: Song[];
+  songs?: Song[];
   songIds?: string[];
+  totalDuration?: number;
+  totalTracks?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }

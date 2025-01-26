@@ -46,5 +46,18 @@ export const SongActions = createActionGroup({
     
     // Get Song By Id
     'Get Song By Id': props<{ id: string }>(),
+    
+    // Load Favorites
+    'Load Favorites': emptyProps(),
+    'Load Favorites Success': props<{ songs: Song[] }>(),
+    'Load Favorites Failure': props<{ error: string }>(),
+    'Toggle Favorite': props<{ songId: string }>(),
+    'Toggle Favorite Success': props<{ song: Song }>(),
+    'Toggle Favorite Failure': props<{ error: string }>(),
+    
+    // Load Song
+    'Load Song': props<{ id: string }>(),
+    'Load Song Success': props<{ song: Song }>(),
+    'Load Song Failure': props<{ error: string }>(),
   }
 }); 

@@ -30,6 +30,7 @@ import {
 import { PlayerActions } from '../../../store/player/player.actions';
 import { Song } from '../../../core/models/song.model';
 import { SongService } from '../../../core/services/song.service';
+import { AppState } from '../../../store/app.state';
 
 @Component({
   selector: 'app-user-library',
@@ -118,7 +119,9 @@ import { SongService } from '../../../core/services/song.service';
       </div>
 
       <div class="albums-grid" *ngIf="!isLoading">
-        <mat-card *ngFor="let album of albums" (click)="navigateToAlbum(album.id)">
+        <mat-card *ngFor="let album of albums" 
+                  class="album-card" 
+                  (click)="onAlbumClick(album.id)">
           <img [src]="getImageUrl(album.imageUrl)" alt="Album cover">
           <mat-card-content>
             <h3>{{album.title}}</h3>
@@ -290,7 +293,7 @@ export class UserLibraryComponent implements OnInit {
   favorites: Set<string> = new Set();
 
   constructor(
-    private store: Store,
+    private store: Store<AppState>,
     private albumService: AlbumService,
     private songService: SongService,
     private snackBar: MatSnackBar,
@@ -469,7 +472,7 @@ export class UserLibraryComponent implements OnInit {
     });
   }
 
-  navigateToAlbum(albumId: string): void {
-    this.router.navigate(['/albums', albumId]);
+  onAlbumClick(albumId: string) {
+    this.router.navigate(['/user/albums', albumId]);
   }
 } 

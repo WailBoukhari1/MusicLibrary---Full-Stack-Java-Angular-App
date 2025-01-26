@@ -30,7 +30,7 @@ export class AlbumService {
             response.data.content = response.data.content.map(album => ({
               ...album,
               songs: [],
-              songIds: album.songs.map(song => song.id)
+              songIds: album.songs?.map(song => song.id) || []
             }));
           }
           return response;
@@ -68,7 +68,7 @@ export class AlbumService {
   }
 
   getAlbumById(id: string): Observable<ApiResponse<Album>> {
-    return this.http.get<ApiResponse<Album>>(`${environment.apiUrl}/api/albums/${id}`);
+    return this.http.get<ApiResponse<Album>>(`${environment.apiUrl}/albums/${id}`);
   }
 
   // getAlbums(): Observable<ApiResponse<Page<Album>>> {

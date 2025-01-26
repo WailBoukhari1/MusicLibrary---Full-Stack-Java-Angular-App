@@ -3,7 +3,7 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Router } from '@angular/router';
 import { AlbumService } from '../../core/services/album.service';
 import { AlbumActions } from './album.actions';
-import { catchError, map, mergeMap, tap } from 'rxjs/operators';
+import { catchError, map, mergeMap, tap, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { Album } from '../../core/models/album.model';
 
@@ -90,6 +90,21 @@ export class AlbumEffects {
     ),
     { dispatch: false }
   );
+
+  loadAlbum$ = createEffect(() => this.actions$.pipe(
+    ofType(AlbumActions.loadAlbum),
+    switchMap(({ id }) => this.albumService.getAlbumById(id).pipe(
+      map(response => {
+        if (!response.data) {
+          throw new Error('Album not found');
+        }
+        return AlbumActions.loadAlbumSuccess({ album: response.data });
+      }),
+      catchError(error => of(AlbumActions.loadAlbumFailure({ 
+        error: error.message || 'Failed to load album' 
+      })))
+    ))
+  ));
 
   constructor(
     private actions$: Actions,

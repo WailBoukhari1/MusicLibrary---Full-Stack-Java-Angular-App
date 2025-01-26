@@ -30,6 +30,7 @@ public class SongRequest {
     
     private String albumId;
     
+    private Boolean isFavorite;
     @Builder.Default
     private List<String> categoryIds = new ArrayList<>();
     

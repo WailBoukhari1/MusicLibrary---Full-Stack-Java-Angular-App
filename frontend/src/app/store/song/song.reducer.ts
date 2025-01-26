@@ -1,18 +1,7 @@
 import { createReducer, on } from '@ngrx/store';
-import { Song } from '../../core/models/song.model';
 import { SongActions } from './song.actions';
 import { initialSongState } from './song.state';
 
-export interface SongState {
-  songs: Song[];
-  selectedSong: Song | null;
-  totalElements: number;
-  totalPages: number;
-  currentPage: number;
-  pageSize: number;
-  loading: boolean;
-  error: string | null;
-}
 
 export const songReducer = createReducer(
   initialSongState,

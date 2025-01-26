@@ -42,9 +42,9 @@ import { PlayerComponent } from '../../../features/user/player/player.component'
           <mat-icon>library_music</mat-icon>
           Library
         </a>
-        <a mat-button routerLink="/user/profile" routerLinkActive="active">
-          <mat-icon>person</mat-icon>
-          Profile
+        <a mat-button routerLink="/user/favorites" routerLinkActive="active">
+          <mat-icon>favorite</mat-icon>
+          Favorites
         </a>
         <ng-container *ngIf="isAdmin$ | async">
           <a mat-button routerLink="/admin" routerLinkActive="active">

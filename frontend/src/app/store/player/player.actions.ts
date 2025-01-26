@@ -21,5 +21,6 @@ export const PlayerActions = createActionGroup({
     'Toggle Shuffle': emptyProps(),
     'Toggle Repeat': emptyProps(),
     'Set Queue': props<{ songs: Song[] }>(),
+    'Set Playing': props<{ isPlaying: boolean }>(),
   }
 }); 

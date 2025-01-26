@@ -25,6 +25,7 @@ public class SongResponse {
     private String albumTitle;
     private String albumArtist;
     private Integer duration;
+    private Boolean isFavorite;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 } 

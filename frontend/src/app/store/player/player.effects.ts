@@ -8,17 +8,15 @@ import { AudioService } from '../../core/services/audio.service';
 @Injectable()
 export class PlayerEffects {
   
-  play$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(PlayerActions.play),
-      tap(({ song }) => {
-        if (song.audioUrl) {
-          this.audioService.play(song.audioUrl);
-        }
-      })
-    ),
-    { dispatch: false }
-  );
+  play$ = createEffect(() => this.actions$.pipe(
+    ofType(PlayerActions.play),
+    tap(({ song }) => {
+      if (song) {
+        this.audioService.play(song);
+      }
+    }),
+    map(() => PlayerActions.setPlaying({ isPlaying: true }))
+  ));
   
   pause$ = createEffect(() =>
     this.actions$.pipe(

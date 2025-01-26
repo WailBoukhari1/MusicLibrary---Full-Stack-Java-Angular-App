@@ -5,6 +5,29 @@ import { initialAlbumState } from './album.state';
 export const albumReducer = createReducer(
   initialAlbumState,
   
+  on(AlbumActions.loadAlbum, state => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+  
+  on(AlbumActions.loadAlbumSuccess, (state, { album }) => ({
+    ...state,
+    selectedAlbum: album,
+    loading: false
+  })),
+  
+  on(AlbumActions.loadAlbumFailure, (state, { error }) => ({
+    ...state,
+    error,
+    loading: false
+  })),
+  
+  on(AlbumActions.clearSelectedAlbum, state => ({
+    ...state,
+    selectedAlbum: null
+  })),
+
   on(AlbumActions.loadAlbums, (state) => ({
     ...state,
     loading: true,

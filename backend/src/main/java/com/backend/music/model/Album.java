@@ -58,5 +58,8 @@ public class Album {
     
     @Field(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Builder.Default
+    private Boolean isFavorite = false;
 }
 

@@ -27,6 +27,7 @@ public abstract class AlbumMapper {
     @Mapping(target = "totalTracks", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "isFavorite", ignore = true)
     public abstract Album toEntity(AlbumRequest request);
     
     @Mapping(target = "imageUrl", source = "coverUrl")
@@ -40,6 +41,7 @@ public abstract class AlbumMapper {
     @Mapping(target = "totalTracks", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "isFavorite", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     public abstract void updateEntityFromRequest(AlbumRequest request, @MappingTarget Album album);
 } 

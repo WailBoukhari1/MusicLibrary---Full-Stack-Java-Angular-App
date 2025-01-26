@@ -3,7 +3,7 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Router } from '@angular/router';
 import { SongService } from '../../core/services/song.service';
 import { SongActions } from './song.actions';
-import { catchError, map, mergeMap, tap } from 'rxjs/operators';
+import { catchError, map, mergeMap, tap, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { Song } from '../../core/models/song.model';
 
@@ -56,7 +56,7 @@ export class SongEffects {
         this.songService.updateSong(id, song).pipe(
           map(response => {
             if (!response.data) {
-              throw new Error('No data received');
+              throw new Error('No song received');
             }
             return SongActions.updateSongSuccess({ song: response.data });
           }),
@@ -91,6 +91,14 @@ export class SongEffects {
       )
     )
   );
+
+  loadSong$ = createEffect(() => this.actions$.pipe(
+    ofType(SongActions.loadSong),
+    switchMap(({ id }) => this.songService.getSongById(id).pipe(
+      map(song => SongActions.loadSongSuccess({ song })),
+      catchError(error => of(SongActions.loadSongFailure({ error: error.message })))
+    ))
+  ));
 
   constructor(
     private actions$: Actions,

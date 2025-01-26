@@ -15,7 +15,7 @@ import { environment } from '../../../../../environments/environment';
 import { Store } from '@ngrx/store';
 import { SongActions } from '../../../../store/song/song.actions';
 import { selectSongsLoading, selectSongsError, selectSelectedSong } from '../../../../store/song/song.selectors';
-import { selectAlbums } from '../../../../store/album/album.selectors';
+import { selectAllAlbums } from '../../../../store/album/album.selectors';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { Subject, Observable } from 'rxjs';
 import { filter, take } from 'rxjs/operators';
@@ -222,7 +222,7 @@ export class SongFormComponent implements OnInit, OnDestroy {
 
   isEditMode = false;
   song$ = this.store.select(selectSelectedSong);
-  albums$ = this.store.select(selectAlbums) as Observable<Album[]>;
+  albums$ = this.store.select(selectAllAlbums) as Observable<Album[]>;
   selectedAudioFile: File | null = null;
   selectedImageFile: File | null = null;
   imagePreviewUrl?: SafeUrl;

@@ -56,6 +56,10 @@ public class Song {
     @DBRef(lazy = true)
     private Album album;
     
+    @Field(name = "is_favorite")
+    @Builder.Default
+    private Boolean isFavorite = false;
+    
     @Field(name = "created_at")
     private LocalDateTime createdAt;
     

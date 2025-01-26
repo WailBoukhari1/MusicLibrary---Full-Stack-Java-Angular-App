@@ -28,7 +28,7 @@ export const appConfig: ApplicationConfig = {
     provideStore({ 
       auth: authReducer,
       user: userReducer,
-      album: albumReducer,
+      albums: albumReducer,
       songs: songReducer,
       player: playerReducer
     }),

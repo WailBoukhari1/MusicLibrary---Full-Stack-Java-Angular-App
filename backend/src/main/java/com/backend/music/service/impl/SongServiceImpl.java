@@ -2,6 +2,7 @@ package com.backend.music.service.impl;
 
 import com.backend.music.dto.request.SongRequest;
 import com.backend.music.dto.response.SongResponse;
+import com.backend.music.exception.ResourceNotFoundException;
 import com.backend.music.mapper.SongMapper;
 import com.backend.music.model.Album;
 import com.backend.music.model.Song;
@@ -59,7 +60,7 @@ public class SongServiceImpl implements SongService {
     public SongResponse getSongById(String id) {
         return songRepository.findById(id)
             .map(songMapper::toResponse)
-            .orElseThrow(() -> new RuntimeException("Song not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Song not found"));
     }
 
     @Override
@@ -122,7 +123,7 @@ public class SongServiceImpl implements SongService {
     @Transactional
     public SongResponse updateSong(String id, SongRequest request) {
         Song song = songRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Song not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Song not found"));
             
         // Store old albumId to check if it changed
         String oldAlbumId = song.getAlbum().getId();
@@ -180,7 +181,7 @@ public class SongServiceImpl implements SongService {
     @Transactional
     public void deleteSong(String id) {
         Song song = songRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Song not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Song not found"));
             
         // Remove song from album if it belongs to one
         if (song.getAlbum() != null) {
@@ -206,7 +207,7 @@ public class SongServiceImpl implements SongService {
     @Override
     public Resource getAudioFile(String id) {
         Song song = songRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Song not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Song not found"));
             
         if (song.getAudioFileId() == null) {
             throw new RuntimeException("Song has no audio file");
@@ -221,5 +222,19 @@ public class SongServiceImpl implements SongService {
             .stream()
             .map(songMapper::toResponse)
             .collect(Collectors.toList());
+    }
+
+    // New methods for favorites
+    public SongResponse toggleFavorite(String id) {
+        Song song = songRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Song not found"));
+        song.setIsFavorite(!song.getIsFavorite());
+        Song savedSong = songRepository.save(song);
+        return songMapper.toResponse(savedSong);
+    }
+
+    public Page<SongResponse> getFavoriteSongs(Pageable pageable) {
+        return songRepository.findByIsFavoriteTrue(pageable)
+            .map(songMapper::toResponse);
     }
 }

@@ -96,4 +96,20 @@ public class SongController {
             .success(true)
             .build());
     }
+    
+    @PostMapping("/songs/{id}/favorite")
+    public ResponseEntity<ApiResponse<SongResponse>> toggleFavorite(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.<SongResponse>builder()
+            .success(true)
+            .data(songService.toggleFavorite(id))
+            .build());
+    }
+    
+    @GetMapping("/songs/favorites")
+    public ResponseEntity<ApiResponse<Page<SongResponse>>> getFavoriteSongs(Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.<Page<SongResponse>>builder()
+            .success(true)
+            .data(songService.getFavoriteSongs(pageable))
+            .build());
+    }
 } 

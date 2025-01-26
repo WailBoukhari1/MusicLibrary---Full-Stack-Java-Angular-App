@@ -18,6 +18,7 @@ export interface Song {
   duration?: number;
   createdAt?: Date;
   updatedAt?: Date;
+  isFavorite?: boolean;
 }
 
 export interface SongResponse {

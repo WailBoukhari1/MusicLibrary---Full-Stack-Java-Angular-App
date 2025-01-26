@@ -10,8 +10,16 @@ import { environment } from '../../../../../environments/environment';
 import { AlbumService } from '../../../../core/services/album.service';
 import { Album } from '../../../../core/models/album.model';
 import { Store } from '@ngrx/store';
-import { selectAlbums, selectAlbumLoading, selectAlbumError, selectTotalElements } from '../../../../store/album/album.selectors';
+import { 
+  selectAllAlbums,
+  selectAlbumLoading,
+  selectAlbumError,
+  selectTotalElements
+} from '../../../../store/album/album.selectors';
 import { AlbumActions } from '../../../../store/album/album.actions';
+import { Observable } from 'rxjs';
+import { AppState } from '../../../../store/app.state';
+import { MatProgressSpinnerModule, MatSpinner } from '@angular/material/progress-spinner';
 
 @Component({
   selector: 'app-album-list',
@@ -22,7 +30,8 @@ import { AlbumActions } from '../../../../store/album/album.actions';
     MatTableModule,
     MatButtonModule,
     MatIconModule,
-    MatPaginatorModule
+    MatPaginatorModule,
+    MatProgressSpinnerModule
   ],
   template: `
     <div class="container">
@@ -34,53 +43,61 @@ import { AlbumActions } from '../../../../store/album/album.actions';
         </button>
       </div>
 
-      <mat-table [dataSource]="(albums$ | async) || []">
-        <ng-container matColumnDef="imageUrl">
-          <mat-header-cell *matHeaderCellDef>Cover</mat-header-cell>
-          <mat-cell *matCellDef="let album">
-            <img [src]="getImageUrl(album.imageUrl)" 
-                 [alt]="album.title" 
-                 class="album-image">
-          </mat-cell>
+      <div class="loading-shade" *ngIf="loading$ | async">
+        <mat-spinner></mat-spinner>
+      </div>
+
+      <ng-container *ngIf="!(loading$ | async)">
+        <ng-container *ngIf="albums$ | async as albums">
+          <mat-table [dataSource]="albums">
+            <ng-container matColumnDef="imageUrl">
+              <mat-header-cell *matHeaderCellDef>Cover</mat-header-cell>
+              <mat-cell *matCellDef="let album">
+                <img [src]="getImageUrl(album.imageUrl)" 
+                     [alt]="album.title" 
+                     class="album-image">
+              </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="title">
+              <mat-header-cell *matHeaderCellDef>Title</mat-header-cell>
+              <mat-cell *matCellDef="let album">{{album.title}}</mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="artist">
+              <mat-header-cell *matHeaderCellDef>Artist</mat-header-cell>
+              <mat-cell *matCellDef="let album">{{album.artist}}</mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="releaseDate">
+              <mat-header-cell *matHeaderCellDef>Release Date</mat-header-cell>
+              <mat-cell *matCellDef="let album">{{album.releaseDate | date}}</mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="actions">
+              <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
+              <mat-cell *matCellDef="let album">
+                <button mat-icon-button color="primary" (click)="onEdit(album)">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button color="warn" (click)="onDelete(album)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </mat-cell>
+            </ng-container>
+
+            <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+            <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+          </mat-table>
         </ng-container>
 
-        <ng-container matColumnDef="title">
-          <mat-header-cell *matHeaderCellDef>Title</mat-header-cell>
-          <mat-cell *matCellDef="let album">{{album.title}}</mat-cell>
-        </ng-container>
-
-        <ng-container matColumnDef="artist">
-          <mat-header-cell *matHeaderCellDef>Artist</mat-header-cell>
-          <mat-cell *matCellDef="let album">{{album.artist}}</mat-cell>
-        </ng-container>
-
-        <ng-container matColumnDef="releaseDate">
-          <mat-header-cell *matHeaderCellDef>Release Date</mat-header-cell>
-          <mat-cell *matCellDef="let album">{{album.releaseDate | date}}</mat-cell>
-        </ng-container>
-
-        <ng-container matColumnDef="actions">
-          <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
-          <mat-cell *matCellDef="let album">
-            <button mat-icon-button color="primary" (click)="onEdit(album)">
-              <mat-icon>edit</mat-icon>
-            </button>
-            <button mat-icon-button color="warn" (click)="onDelete(album)">
-              <mat-icon>delete</mat-icon>
-            </button>
-          </mat-cell>
-        </ng-container>
-
-        <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-        <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
-      </mat-table>
-
-      <mat-paginator
-        [length]="(total$ | async) || 0"
-        [pageSize]="pageSize"
-        [pageSizeOptions]="[5, 10, 25, 100]"
-        (page)="onPageChange($event)">
-      </mat-paginator>
+        <mat-paginator
+          [length]="(total$ | async) || 0"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="[5, 10, 25, 100]"
+          (page)="onPageChange($event)">
+        </mat-paginator>
+      </ng-container>
     </div>
   `,
   styles: [`
@@ -103,10 +120,22 @@ import { AlbumActions } from '../../../../store/album/album.actions';
     mat-table {
       margin-bottom: 20px;
     }
+    .loading-shade {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      background: rgba(0, 0, 0, 0.15);
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
   `]
 })
 export class AlbumListComponent implements OnInit {
-  albums$ = this.store.select(selectAlbums);
+  albums$: Observable<Album[]> = this.store.select(selectAllAlbums);
   loading$ = this.store.select(selectAlbumLoading);
   error$ = this.store.select(selectAlbumError);
   total$ = this.store.select(selectTotalElements);
@@ -116,7 +145,7 @@ export class AlbumListComponent implements OnInit {
   displayedColumns = ['imageUrl', 'title', 'artist', 'releaseDate', 'actions'];
 
   constructor(
-    private store: Store,
+    private store: Store<AppState>,
     private router: Router
   ) {}
 

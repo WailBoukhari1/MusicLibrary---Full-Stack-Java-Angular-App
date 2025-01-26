@@ -1,162 +1,136 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatTableModule } from '@angular/material/table';
-import { environment } from '../../../../environments/environment';
-
-import { Album } from '../../../core/models/album.model';
-import { Song } from '../../../core/models/song.model';
-import { AlbumService } from '../../../core/services/album.service';
+import { MatListModule } from '@angular/material/list';
 import { PlayerActions } from '../../../store/player/player.actions';
-import { selectCurrentTrack, selectIsPlaying } from '../../../store/player/player.selectors';
+import { selectCurrentAlbum } from '../../../store/album/album.selectors';
+import { AppState } from '../../../store/app.state';
+import { AlbumActions } from '../../../store/album/album.actions';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-album-details',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule, MatTableModule],
+  imports: [
+    CommonModule, 
+    MatCardModule, 
+    MatButtonModule, 
+    MatIconModule, 
+    MatListModule,
+    RouterModule
+  ],
   template: `
-    <div class="album-details" *ngIf="album">
-      <div class="album-header">
-        <img [src]="getImageUrl(album.imageUrl)" [alt]="album.title">
-        <div class="album-info">
+    <div class="album-details" *ngIf="album$ | async as album">
+      <mat-card class="album-info">
+        <img [src]="album.imageUrl" [alt]="album.title" class="album-cover">
+        <mat-card-content>
           <h1>{{album.title}}</h1>
-          <p class="artist">{{album.artist}}</p>
-          <p class="metadata">
-            <span class="category">{{album.category}}</span>
-            <span class="genre">{{album.genre}}</span>
-            <span class="year">{{album.releaseDate | date:'yyyy'}}</span>
-          </p>
+          <p>{{album.artist}}</p>
           <button mat-raised-button color="primary" (click)="playAlbum(album)">
-            <mat-icon>{{(isCurrentAlbum && (isPlaying$ | async)) ? 'pause' : 'play_arrow'}}</mat-icon>
-            {{(isCurrentAlbum && (isPlaying$ | async)) ? 'PAUSE' : 'PLAY'}}
+            <mat-icon>play_arrow</mat-icon> Play Album
           </button>
-        </div>
-      </div>
+        </mat-card-content>
+      </mat-card>
 
-      <table mat-table [dataSource]="album.songs" class="songs-table">
-        <ng-container matColumnDef="play">
-          <th mat-header-cell *matHeaderCellDef></th>
-          <td mat-cell *matCellDef="let song">
-            <button mat-icon-button (click)="playSong(song)">
-              <mat-icon>
-                {{(isCurrentSong(song) && (isPlaying$ | async)) ? 'pause' : 'play_arrow'}}
-              </mat-icon>
-            </button>
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="trackNumber">
-          <th mat-header-cell *matHeaderCellDef>No.</th>
-          <td mat-cell *matCellDef="let song">{{song.trackNumber}}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="title">
-          <th mat-header-cell *matHeaderCellDef>Title</th>
-          <td mat-cell *matCellDef="let song">{{song.title}}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="duration">
-          <th mat-header-cell *matHeaderCellDef>Duration</th>
-          <td mat-cell *matCellDef="let song">{{formatDuration(song.duration)}}</td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;"
-            [class.active]="isCurrentSong(row)"></tr>
-      </table>
+      <mat-card class="songs-list">
+        <mat-card-content>
+          <mat-list>
+            <mat-list-item *ngFor="let song of album.songs; let i = index" 
+                          (click)="playSong(song)"
+                          class="song-item">
+              <mat-icon matListItemIcon>music_note</mat-icon>
+              <div matListItemTitle>{{song.title}}</div>
+              <div matListItemLine>{{song.duration | date:'mm:ss'}}</div>
+              <div class="song-actions">
+                <button mat-icon-button (click)="playSong(song)">
+                  <mat-icon>play_arrow</mat-icon>
+                </button>
+                <button mat-icon-button [routerLink]="['/user/songs', song.id]">
+                  <mat-icon>info</mat-icon>
+                </button>
+                <button mat-icon-button (click)="toggleFavorite(song); $event.stopPropagation()">
+                  <mat-icon>{{song.isFavorite ? 'favorite' : 'favorite_border'}}</mat-icon>
+                </button>
+              </div>
+            </mat-list-item>
+          </mat-list>
+        </mat-card-content>
+      </mat-card>
     </div>
   `,
   styles: [`
     .album-details {
       padding: 20px;
+      display: grid;
+      gap: 20px;
       max-width: 1200px;
       margin: 0 auto;
     }
-    .album-header {
-      display: flex;
-      gap: 20px;
-      margin-bottom: 40px;
-    }
-    .album-header img {
-      width: 300px;
-      height: 300px;
-      object-fit: cover;
-    }
+
     .album-info {
       display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      gap: 10px;
+      gap: 20px;
+      padding: 20px;
+
+      .album-cover {
+        width: 300px;
+        height: 300px;
+        object-fit: cover;
+      }
+
+      mat-card-content {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
     }
-    .songs-table {
-      width: 100%;
+
+    .song-item {
+      cursor: pointer;
+      &:hover {
+        background: rgba(0,0,0,0.04);
+      }
     }
-    .mat-mdc-row.active {
-      background: rgba(0,0,0,0.05);
+
+    .song-actions {
+      display: flex;
+      gap: 8px;
     }
   `]
 })
-export class AlbumDetailsComponent implements OnInit {
-  album: Album | null = null;
-  isPlaying$ = this.store.select(selectIsPlaying);
-  currentTrack$ = this.store.select(selectCurrentTrack);
-  currentTrackId: string | null = null;
-  isCurrentAlbum = false;
-  displayedColumns = ['play', 'trackNumber', 'title', 'duration'];
+export class AlbumDetailsComponent implements OnInit, OnDestroy {
+  album$ = this.store.select(selectCurrentAlbum);
 
   constructor(
     private route: ActivatedRoute,
-    private albumService: AlbumService,
-    private store: Store
+    private store: Store<AppState>
   ) {}
 
   ngOnInit() {
     const albumId = this.route.snapshot.paramMap.get('id');
     if (albumId) {
-      this.albumService.getAlbumById(albumId).subscribe(response => {
-        if (response.success && response.data) {
-          this.album = response.data;
-        }
-      });
-    }
-
-    this.currentTrack$.subscribe(track => {
-      this.currentTrackId = track?.id || null;
-      this.isCurrentAlbum = track?.albumId === this.album?.id;
-    });
-  }
-
-  playAlbum(album: Album) {
-    if (this.isCurrentAlbum) {
-      this.store.dispatch(PlayerActions.togglePlay());
-    } else {
-      this.store.dispatch(PlayerActions.playAlbum({ album }));
+      this.store.dispatch(AlbumActions.loadAlbum({ id: albumId }));
     }
   }
 
-  playSong(song: Song) {
-    if (this.isCurrentSong(song)) {
-      this.store.dispatch(PlayerActions.togglePlay());
-    } else {
-      this.store.dispatch(PlayerActions.play({ song }));
-    }
+  ngOnDestroy() {
+    this.store.dispatch(AlbumActions.clearSelectedAlbum());
   }
 
-  isCurrentSong(song: Song): boolean {
-    return song.id === this.currentTrackId;
+  playAlbum(album: any) {
+    this.store.dispatch(PlayerActions.playAlbum({ album }));
   }
 
-  formatDuration(seconds: number): string {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  playSong(song: any) {
+    this.store.dispatch(PlayerActions.play({ song }));
   }
 
-  getImageUrl(imageUrl: string | undefined): string {
-    return imageUrl ? `${environment.apiUrl}/files/${imageUrl}` : 'assets/default-cover.png';
+  toggleFavorite(song: any) {
+    // Dispatch action to toggle favorite
+    // this.store.dispatch(SongActions.toggleFavorite({ songId: song.id }));
   }
 } 

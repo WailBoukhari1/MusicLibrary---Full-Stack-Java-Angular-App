@@ -21,4 +21,6 @@ public interface SongService {
     void deleteSong(String id);
     Resource getAudioFile(String id);
     List<SongResponse> getSongsByIds(List<String> songIds);
+    SongResponse toggleFavorite(String id);
+    Page<SongResponse> getFavoriteSongs(Pageable pageable);
 } 

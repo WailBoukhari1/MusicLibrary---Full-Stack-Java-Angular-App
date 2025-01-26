@@ -1,11 +1,13 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import { Song } from '../models/song.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AudioService {
-  private audio = new Audio();
+  private audio: HTMLAudioElement;
   private _currentTime = new BehaviorSubject<number>(0);
   private _duration = new BehaviorSubject<number>(0);
 
@@ -13,6 +15,8 @@ export class AudioService {
   duration$ = this._duration.asObservable();
 
   constructor() {
+    this.audio = new Audio();
+
     this.audio.addEventListener('timeupdate', () => {
       this._currentTime.next(this.audio.currentTime);
     });
@@ -27,16 +31,23 @@ export class AudioService {
     });
   }
 
-  play(url?: string) {
-    if (url) {
-      this.audio.src = url;
-      this.audio.load();
+  play(song?: Song) {
+    if (song?.audioUrl) {
+      const fullUrl = `${environment.apiUrl}/files/${song.audioUrl}`;
+      if (this.audio.src !== fullUrl) {
+        this.audio.src = fullUrl;
+      }
     }
     return this.audio.play();
   }
 
   pause() {
     this.audio.pause();
+  }
+
+  stop() {
+    this.audio.pause();
+    this.audio.currentTime = 0;
   }
 
   seek(time: number) {
@@ -57,5 +68,13 @@ export class AudioService {
 
   isPaused(): boolean {
     return this.audio.paused;
+  }
+
+  addEventListener(event: string, handler: (e: Event) => void) {
+    this.audio.addEventListener(event, handler);
+  }
+
+  removeEventListener(event: string, handler: (e: Event) => void) {
+    this.audio.removeEventListener(event, handler);
   }
 } 

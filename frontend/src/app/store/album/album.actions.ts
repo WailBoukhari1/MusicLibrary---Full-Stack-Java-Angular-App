@@ -34,5 +34,7 @@ export const AlbumActions = createActionGroup({
 
     'Set Error': props<{ error: string }>(),
     'Clear Error': emptyProps(),
+
+    'Clear Selected Album': emptyProps()
   }
 }); 

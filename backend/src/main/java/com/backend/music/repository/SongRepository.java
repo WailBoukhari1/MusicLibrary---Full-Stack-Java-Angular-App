@@ -14,4 +14,6 @@ public interface SongRepository extends MongoRepository<Song, String> {
     Page<Song> findByTitleContainingIgnoreCase(String title, Pageable pageable);
 
     Page<Song> findByAlbumId(String albumId, Pageable pageable);
+
+    Page<Song> findByIsFavoriteTrue(Pageable pageable);
 } 
