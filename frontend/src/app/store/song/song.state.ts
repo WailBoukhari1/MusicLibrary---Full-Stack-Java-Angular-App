@@ -10,6 +10,7 @@ export interface SongState {
   loading: boolean;
   error: string | null;
   favorites: Song[];
+  success: boolean;
 }
 
 export const initialSongState: SongState = {
@@ -21,5 +22,6 @@ export const initialSongState: SongState = {
   pageSize: 10,
   loading: false,
   error: null,
-  favorites: []
+  favorites: [],
+  success: false
 }; 

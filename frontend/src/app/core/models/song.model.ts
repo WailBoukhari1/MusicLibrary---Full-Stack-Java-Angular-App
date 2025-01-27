@@ -5,7 +5,6 @@ export interface Song {
   id: string;
   title: string;
   artist: string;
-  genre?: string;
   trackNumber?: number;
   description?: string;
   audioFileId?: string;

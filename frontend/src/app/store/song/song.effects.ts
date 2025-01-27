@@ -92,11 +92,33 @@ export class SongEffects {
     )
   );
 
-  loadSong$ = createEffect(() => this.actions$.pipe(
-    ofType(SongActions.loadSong),
-    switchMap(({ id }) => this.songService.getSongById(id).pipe(
-      map(song => SongActions.loadSongSuccess({ song })),
-      catchError(error => of(SongActions.loadSongFailure({ error: error.message })))
+  loadSong$ = createEffect(() => {
+    return this.actions$.pipe(
+      ofType(SongActions.loadSong),
+      switchMap(({ id }) => 
+        this.songService.getSong(id).pipe(
+          map(response => {
+            console.log('Loaded song:', response.data);
+            return SongActions.loadSongSuccess({ song: response.data as Song });
+          }),
+          catchError(error => {
+            console.error('Load song error:', error);
+            return of(SongActions.loadSongFailure({ error: error.message }));
+          })
+        )
+      )
+    );
+  });
+
+  toggleFavorite$ = createEffect(() => this.actions$.pipe(
+    ofType(SongActions.toggleFavorite),
+    switchMap(({ song }) => this.songService.toggleFavorite(song).pipe(
+      map(response => SongActions.toggleFavoriteSuccess({ 
+        song: { ...song, isFavorite: !song.isFavorite }
+      })),
+      catchError(error => of(SongActions.toggleFavoriteFailure({ 
+        error: error.message || 'Failed to toggle favorite'
+      })))
     ))
   ));
 

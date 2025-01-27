@@ -16,6 +16,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { EnumService } from '../../../../core/services/enum.service';
 import { EnumValue } from '../../../../core/models/enums.model';
+import { Album } from '../../../../core/models/album.model';
 
 @Component({
   selector: 'app-album-form',
@@ -161,6 +162,7 @@ export class AlbumFormComponent implements OnInit, OnDestroy, AfterViewInit {
   loading$ = this.store.select(selectAlbumLoading);
   error$ = this.store.select(selectAlbumError);
   private destroy$ = new Subject<void>();
+  album: Album | null = null;
 
   @ViewChild('titleInput') titleInput!: ElementRef<HTMLInputElement>;
 
@@ -191,7 +193,8 @@ export class AlbumFormComponent implements OnInit, OnDestroy, AfterViewInit {
       releaseDate: ['', [
         Validators.required,
         this.dateValidator()
-      ]]
+      ]],
+      description: ['']
     });
   }
 
@@ -218,23 +221,22 @@ export class AlbumFormComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit() {
     this.loadEnums();
-    // Combine both data subscriptions into one
-    this.route.data.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(data => {
-      // Handle album data for edit mode
-      if (data['albumData']?.success && data['albumData'].data) {
-        this.isEditMode = true;
-        const album = data['albumData'].data;
+    // Get resolved data
+    this.route.data.subscribe(data => {
+      this.album = data['album'];
+      this.isEditMode = !!this.album;
+      
+      if (this.album) {
+        // Pre-fill the form
         this.albumForm.patchValue({
-          title: album.title,
-          artist: album.artist,
-          category: album.category,
-          genre: album.genre,
-          releaseDate: new Date(album.releaseDate).toISOString().split('T')[0]
+          title: this.album.title,
+          artist: this.album.artist,
+          category: this.album.category,
+          genre: this.album.genre,
+          releaseDate: this.album.releaseDate,
         });
-        if (album.coverUrl) {
-          this.currentImageUrl = `${environment.apiUrl}/files/images/${album.coverUrl}`;
+        if (this.album.coverUrl) {
+          this.currentImageUrl = `${environment.apiUrl}/files/images/${this.album.coverUrl}`;
         }
       }
     });

@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
+import { albumResolver } from '../../../core/resolvers/album.resolver';
 
-export const ADMIN_ALBUM_ROUTES: Routes = [
+export const ADMIN_ALBUMS_ROUTES: Routes = [
   {
     path: '',
     loadComponent: () => import('./album-list/album-list.component')
@@ -14,6 +15,9 @@ export const ADMIN_ALBUM_ROUTES: Routes = [
   {
     path: 'edit/:id',
     loadComponent: () => import('./album-form/album-form.component')
-      .then(m => m.AlbumFormComponent)
+      .then(m => m.AlbumFormComponent),
+    resolve: {
+      album: albumResolver
+    }
   }
 ]; 

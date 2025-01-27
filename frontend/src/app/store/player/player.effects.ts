@@ -26,14 +26,6 @@ export class PlayerEffects {
     { dispatch: false }
   );
   
-  resume$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(PlayerActions.resume),
-      tap(() => this.audioService.play())
-    ),
-    { dispatch: false }
-  );
-  
   setVolume$ = createEffect(() =>
     this.actions$.pipe(
       ofType(PlayerActions.setVolume),
@@ -42,31 +34,33 @@ export class PlayerEffects {
     { dispatch: false }
   );
 
-  playAlbum$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(PlayerActions.playAlbum),
-      map(({ album }) => {
-        if (album.songs && album.songs.length > 0) {
-          // Set the queue and play first song
-          this.store.dispatch(PlayerActions.setQueue({ songs: album.songs }));
-          return PlayerActions.play({ song: album.songs[0] });
-        }
-        return PlayerActions.pause();
-      })
-    )
-  );
-
   togglePlay$ = createEffect(() =>
     this.actions$.pipe(
       ofType(PlayerActions.togglePlay),
       map(() => {
+        const currentSong = this.audioService.getCurrentSong();
         if (this.audioService.isPaused()) {
-          this.audioService.play();
+          if (currentSong) {
+            this.audioService.play(currentSong);
+          }
           return PlayerActions.resume();
         } else {
           this.audioService.pause();
           return PlayerActions.pause();
         }
+      })
+    )
+  );
+
+  playAlbum$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(PlayerActions.playAlbum),
+      map(({ songs }) => {
+        if (songs.length > 0) {
+          this.store.dispatch(PlayerActions.setQueue({ songs }));
+          return PlayerActions.play({ song: songs[0] });
+        }
+        return PlayerActions.pause();
       })
     )
   );

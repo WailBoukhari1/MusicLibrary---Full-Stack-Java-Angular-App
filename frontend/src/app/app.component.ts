@@ -20,11 +20,19 @@ import { CommonModule } from '@angular/common';
     <mat-sidenav-container>
       <!-- Your existing navigation -->
       <router-outlet></router-outlet>
-      <app-player class="player-bar"></app-player>
+      <app-player></app-player>
     </mat-sidenav-container>
   `,
   styles: [`
     .player-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+    }
+
+    app-player {
       position: fixed;
       bottom: 0;
       left: 0;

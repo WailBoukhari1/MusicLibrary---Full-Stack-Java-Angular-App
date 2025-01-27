@@ -26,4 +26,9 @@ export const selectAlbumLoading = createSelector(
 export const selectAlbumError = createSelector(
   selectAlbumState,
   (state: AlbumState) => state.error
+);
+
+export const selectSelectedAlbum = createSelector(
+  selectAlbumState,
+  (state) => state.selectedAlbum
 ); 

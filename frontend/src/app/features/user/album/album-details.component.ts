@@ -11,6 +11,8 @@ import { selectCurrentAlbum } from '../../../store/album/album.selectors';
 import { AppState } from '../../../store/app.state';
 import { AlbumActions } from '../../../store/album/album.actions';
 import { RouterModule } from '@angular/router';
+import { Album } from '../../../core/models/album.model';
+import { SongActions } from '../../../store/song/song.actions';
 
 @Component({
   selector: 'app-album-details',
@@ -39,22 +41,26 @@ import { RouterModule } from '@angular/router';
       <mat-card class="songs-list">
         <mat-card-content>
           <mat-list>
-            <mat-list-item *ngFor="let song of album.songs; let i = index" 
-                          (click)="playSong(song)"
-                          class="song-item">
-              <mat-icon matListItemIcon>music_note</mat-icon>
-              <div matListItemTitle>{{song.title}}</div>
-              <div matListItemLine>{{song.duration | date:'mm:ss'}}</div>
-              <div class="song-actions">
-                <button mat-icon-button (click)="playSong(song)">
-                  <mat-icon>play_arrow</mat-icon>
-                </button>
-                <button mat-icon-button [routerLink]="['/user/songs', song.id]">
-                  <mat-icon>info</mat-icon>
-                </button>
-                <button mat-icon-button (click)="toggleFavorite(song); $event.stopPropagation()">
-                  <mat-icon>{{song.isFavorite ? 'favorite' : 'favorite_border'}}</mat-icon>
-                </button>
+            <mat-list-item *ngFor="let song of album.songs; let i = index" class="song-item">
+              <div class="song-item-content">
+                <div class="song-info">
+                  <mat-icon>music_note</mat-icon>
+                  <div class="song-text">
+                    <div class="song-title">{{song.title}}</div>
+                    <div class="song-duration">{{song.duration | date:'mm:ss'}}</div>
+                  </div>
+                </div>
+                <div class="song-actions">
+                  <button mat-icon-button (click)="playSong(song); $event.stopPropagation()">
+                    <mat-icon>play_arrow</mat-icon>
+                  </button>
+                  <button mat-icon-button [routerLink]="['/user/song-details', song.id]" (click)="$event.stopPropagation()">
+                    <mat-icon>info</mat-icon>
+                  </button>
+                  <button mat-icon-button (click)="toggleFavorite(song); $event.stopPropagation()">
+                    <mat-icon>{{song.isFavorite ? 'favorite' : 'favorite_border'}}</mat-icon>
+                  </button>
+                </div>
               </div>
             </mat-list-item>
           </mat-list>
@@ -96,9 +102,42 @@ import { RouterModule } from '@angular/router';
       }
     }
 
+    .song-item-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      padding: 8px;
+    }
+
+    .song-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .song-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .song-title {
+      font-weight: 500;
+    }
+
+    .song-duration {
+      color: rgba(0, 0, 0, 0.6);
+      font-size: 14px;
+    }
+
     .song-actions {
       display: flex;
       gap: 8px;
+      margin-left: auto;
+    }
+
+    mat-list-item {
+      height: auto !important;
     }
   `]
 })
@@ -121,8 +160,10 @@ export class AlbumDetailsComponent implements OnInit, OnDestroy {
     this.store.dispatch(AlbumActions.clearSelectedAlbum());
   }
 
-  playAlbum(album: any) {
-    this.store.dispatch(PlayerActions.playAlbum({ album }));
+  playAlbum(album: Album) {
+    if (album.songs) {
+      this.store.dispatch(PlayerActions.playAlbum({ songs: album.songs }));
+    }
   }
 
   playSong(song: any) {
@@ -130,7 +171,7 @@ export class AlbumDetailsComponent implements OnInit, OnDestroy {
   }
 
   toggleFavorite(song: any) {
-    // Dispatch action to toggle favorite
+      // Dispatch action to toggle favorite
     // this.store.dispatch(SongActions.toggleFavorite({ songId: song.id }));
   }
 } 

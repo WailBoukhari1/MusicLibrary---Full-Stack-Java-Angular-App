@@ -88,7 +88,7 @@ import { environment } from '../../../../../environments/environment';
           <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef></th>
             <td mat-cell *matCellDef="let song">
-              <button mat-icon-button (click)="onEditSong(song.id)">
+              <button mat-icon-button (click)="onEdit(song.id)">
                 <mat-icon>edit</mat-icon>
               </button>
               <button mat-icon-button color="warn" (click)="onDeleteSong(song)">
@@ -215,13 +215,15 @@ export class SongListComponent implements OnInit {
     this.router.navigate(['/admin/songs/create']);
   }
 
-  onEditSong(id: string) {
-    this.router.navigate(['/admin/songs/edit', id]);
+  onEdit(songId: string): void {
+    this.router.navigate(['/admin/songs/edit', songId]);
   }
+
   getImageUrl(coverUrl: string | null | undefined): string {
     if (!coverUrl) return 'assets/default-album.png';
     return `${environment.apiUrl}/files/${coverUrl}`;
   }
+
   onDeleteSong(song: Song): void {
     if (confirm('Are you sure you want to delete this song?')) {
       if (song && song.id) {

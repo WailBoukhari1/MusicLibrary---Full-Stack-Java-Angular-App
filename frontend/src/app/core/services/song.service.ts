@@ -45,12 +45,34 @@ export class SongService {
         if (response.success && response.data) {
           return {
             ...response.data,
-            audioUrl: response.data.audioUrl ? `${environment.apiUrl}/files/${response.data.audioUrl}` : undefined,
-            imageUrl: response.data.imageUrl ? `${environment.apiUrl}/files/${response.data.imageUrl}` : undefined
+            audioUrl: response.data.audioFileId 
+              ? `${environment.apiUrl}/files/${response.data.audioFileId}`
+              : '',
+            imageUrl: response.data.imageFileId 
+              ? `${environment.apiUrl}/files/${response.data.imageFileId}`
+              : ''
           };
         }
         throw new Error('Failed to fetch song');
       })
     );
+  }
+
+  toggleFavorite(song: Song): Observable<ApiResponse<Song>> {
+    return this.http.post<ApiResponse<Song>>(
+      `${environment.apiUrl}/songs/${song.id}/favorite`,
+      {}
+    ).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message || 'Failed to toggle favorite');
+        }
+        return response;
+      })
+    );
+  }
+
+  getSong(id: string): Observable<ApiResponse<Song>> {
+    return this.http.get<ApiResponse<Song>>(`${this.apiUrl}/${id}`);
   }
 } 

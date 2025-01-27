@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { UserLibraryComponent } from './library/user-library.component';
 import { AlbumDetailsComponent } from './album/album-details.component';
 import { UserFavoritesComponent } from './favorites/user-favorites.component';
-import { UserSongsComponent } from './songs/user-songs.component';
+import { SongDetailsComponent } from './song/song-details.component';
 
 export const USER_ROUTES: Routes = [
   {
@@ -23,7 +23,7 @@ export const USER_ROUTES: Routes = [
     component: UserFavoritesComponent
   },
   {
-    path: 'songs/:id',
-    component: UserSongsComponent
+    path: 'song-details/:id',
+    component: SongDetailsComponent
   }
 ]; 

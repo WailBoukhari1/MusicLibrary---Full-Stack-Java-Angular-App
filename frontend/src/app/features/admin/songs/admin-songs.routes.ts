@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
+import { songResolver } from '../../../core/resolvers/song.resolver';
 
-export const ADMIN_SONG_ROUTES: Routes = [
+export const ADMIN_SONGS_ROUTES: Routes = [
   {
     path: '',
     loadComponent: () => import('./song-list/song-list.component')
@@ -13,6 +14,9 @@ export const ADMIN_SONG_ROUTES: Routes = [
   },
   {
     path: 'edit/:id',
+    resolve: {
+      song: songResolver
+    },
     loadComponent: () => import('./song-form/song-form.component')
       .then(m => m.SongFormComponent)
   }

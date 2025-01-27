@@ -22,10 +22,11 @@ import { CategoryEnum, GenreEnum, EnumMapper } from '../../../core/models/enums.
 import { EnumService } from '../../../core/services/enum.service';
 import { environment } from '../../../../environments/environment';
 import { 
-  selectCurrentTrack, 
+  selectCurrentSong,
   selectIsPlaying,
+  selectVolume,
   selectCanSkipNext,
-  selectCanSkipPrevious 
+  selectCanSkipPrevious
 } from '../../../store/player/player.selectors';
 import { PlayerActions } from '../../../store/player/player.actions';
 import { Song } from '../../../core/models/song.model';
@@ -280,7 +281,7 @@ export class UserLibraryComponent implements OnInit {
   albums: Album[] = [];
   currentAlbumId: string | null = null;
   isPlaying$ = this.store.select(selectIsPlaying);
-  currentTrack$ = this.store.select(selectCurrentTrack);
+  currentSong$ = this.store.select(selectCurrentSong);
   canSkipNext$ = this.store.select(selectCanSkipNext);
   canSkipPrevious$ = this.store.select(selectCanSkipPrevious);
 
@@ -316,8 +317,8 @@ export class UserLibraryComponent implements OnInit {
     this.loadEnums();
     this.loadAlbums();
     this.setupFilterSubscription();
-    this.currentTrack$.subscribe(track => {
-      this.currentAlbumId = track?.albumId || null;
+    this.currentSong$.subscribe(song => {
+      this.currentAlbumId = song?.albumId || null;
     });
   }
 
@@ -421,20 +422,9 @@ export class UserLibraryComponent implements OnInit {
     event.target.src = 'assets/images/default-album.png';
   }
 
-  playAlbum(album: Album): void {
-    if (album.songs && album.songs.length > 0) {
-      if (this.isCurrentAlbum(album)) {
-        // If it's the current album, toggle play/pause
-        this.store.dispatch(PlayerActions.togglePlay());
-      } else {
-        // If it's a different album, start playing it
-      this.store.dispatch(PlayerActions.playAlbum({ 
-        album: {
-          ...album,
-          songs: album.songs as Song[]
-        }
-      }));
-      }
+  playAlbum(album: Album) {
+    if (album.songs) {
+      this.store.dispatch(PlayerActions.playAlbum({ songs: album.songs }));
     }
   }
 

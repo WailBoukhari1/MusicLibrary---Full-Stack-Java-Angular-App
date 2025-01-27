@@ -9,7 +9,7 @@ import { Observable, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { PlayerActions } from '../../../store/player/player.actions';
 import { 
-  selectCurrentTrack, 
+  selectCurrentSong, 
   selectIsPlaying,
   selectVolume 
 } from '../../../store/player/player.selectors';
@@ -175,7 +175,7 @@ export class PlayerComponent implements OnInit, OnDestroy {
     private store: Store,
     private audioService: AudioService
   ) {
-    this.currentTrack$ = this.store.select(selectCurrentTrack);
+    this.currentTrack$ = this.store.select(selectCurrentSong);
     this.isPlaying$ = this.store.select(selectIsPlaying);
   }
 
@@ -199,10 +199,13 @@ export class PlayerComponent implements OnInit, OnDestroy {
   }
 
   togglePlay() {
-    if (this.audioService.isPaused()) {
-      this.store.dispatch(PlayerActions.resume());
-    } else {
-      this.store.dispatch(PlayerActions.pause());
+    const currentSong = this.audioService.getCurrentSong();
+    if (currentSong) {
+      if (this.audioService.isPaused()) {
+        this.store.dispatch(PlayerActions.play({ song: currentSong }));
+      } else {
+        this.store.dispatch(PlayerActions.pause());
+      }
     }
   }
 

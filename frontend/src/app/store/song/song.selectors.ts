@@ -36,4 +36,9 @@ export const selectFavoriteSongs = createSelector(
 export const selectSelectedSong = createSelector(
   selectSongState,
   (state) => state.selectedSong
+);
+
+export const selectSongsSuccess = createSelector(
+  selectSongState,
+  (state) => state.success
 ); 

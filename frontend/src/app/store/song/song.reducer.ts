@@ -104,6 +104,29 @@ export const songReducer = createReducer(
     error,
     loading: false
   })),
+    
+  on(SongActions.toggleFavorite, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+  
+  on(SongActions.toggleFavoriteSuccess, (state, { song }) => ({
+    ...state,
+    loading: false,
+    songs: state.songs.map(s => 
+      s.id === song.id ? { ...s, isFavorite: !s.isFavorite } : s
+    ),
+    selectedSong: state.selectedSong?.id === song.id 
+      ? { ...state.selectedSong, isFavorite: !state.selectedSong.isFavorite }
+      : state.selectedSong
+  })),
+  
+  on(SongActions.toggleFavoriteFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  })),
   
   // Select Song
   on(SongActions.selectSong, (state, { song }) => ({
@@ -123,5 +146,28 @@ export const songReducer = createReducer(
   on(SongActions.clearErrors, (state) => ({
     ...state,
     error: null
+  })),
+  
+  on(SongActions.clearSelectedSong, (state) => ({
+    ...state,
+    selectedSong: null
+  })),
+  
+  on(SongActions.loadSong, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+  
+  on(SongActions.loadSongSuccess, (state, { song }) => ({
+    ...state,
+    selectedSong: song,
+    loading: false
+  })),
+  
+  on(SongActions.loadSongFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
   }))
 ); 
