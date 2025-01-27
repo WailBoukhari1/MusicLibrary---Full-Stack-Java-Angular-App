@@ -10,7 +10,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { Subject, Observable, of } from 'rxjs';
+import { Subject, Observable } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
@@ -241,21 +241,14 @@ export class SongFormComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     // Get resolved data
-    const resolvedData = this.route.snapshot.data['song'];
+    const resolvedSong = this.route.snapshot.data['song'];
     
     this.songId = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!this.songId;
 
-    if (resolvedData) {
-      if (resolvedData.song) {
-        this.patchFormValues(resolvedData.song);
-        this.setupPreviews(resolvedData.song);
-      }
-      
-      // Update albums in the store
-      if (resolvedData.albums) {
-        this.albums$ = of(resolvedData.albums);
-      }
+    if (resolvedSong) {
+      this.patchFormValues(resolvedSong);
+      this.setupPreviews(resolvedSong);
     }
 
     // Handle success/error

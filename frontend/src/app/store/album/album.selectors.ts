@@ -10,7 +10,7 @@ export const selectAllAlbums = createSelector(
 
 export const selectCurrentAlbum = createSelector(
   selectAlbumStateSelector,
-  (state: AlbumState) => state.selectedAlbum
+  (state) => state?.selectedAlbum ?? null
 );
 
 export const selectTotalElements = createSelector(

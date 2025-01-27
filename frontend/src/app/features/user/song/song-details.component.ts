@@ -10,8 +10,8 @@ import { selectSelectedSong, selectSongsLoading, selectSongsError } from '../../
 import * as SongActions from '../../../store/song/song.actions';
 import { PlayerActions } from '../../../store/player/player.actions';
 import { Song } from '../../../core/models/song.model';
-import { environment } from '../../../../environments/environment';
 import { Observable } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-song-details',
@@ -26,7 +26,7 @@ import { Observable } from 'rxjs';
   template: `
     <div class="container" *ngIf="song$ | async as song">
       <mat-card class="song-card">
-        <img [src]="song.imageUrl" [alt]="song.title">
+        <img [src]="getImageUrl(song.imageUrl)" [alt]="song.title">
             <mat-card-content>
           <h2>{{song.title}}</h2>
           <p class="artist">{{song.artist}}</p>
@@ -93,7 +93,12 @@ export class SongDetailsComponent implements OnInit, OnDestroy {
       this.store.dispatch(SongActions.loadSong({ id }));
     }
   }
-
+  getImageUrl(imageUrl: string | null | undefined): string {
+    if (!imageUrl) return 'assets/images/default-album.png';
+    return imageUrl.startsWith('http') ? 
+      imageUrl : 
+      `${environment.apiUrl}/files/${imageUrl}`;
+  }
   ngOnDestroy() {
     this.store.dispatch(SongActions.clearSelectedSong());
   }

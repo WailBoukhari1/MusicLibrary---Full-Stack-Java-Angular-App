@@ -72,21 +72,24 @@ export class AlbumEffects {
     { dispatch: false }
   );
 
-  loadAlbum$ = createEffect(() => this.actions$.pipe(
-    ofType(AlbumActions.loadAlbum),
-    switchMap(({ id }) => this.albumService.getAlbumById(id).pipe(
-      map(response => {
-        const album = response.data;
-        if (!album) {
-          throw new Error('Album not found');
-        }
-        return AlbumActions.loadAlbumSuccess({ album });
-      }),
-      catchError(error => of(AlbumActions.loadAlbumFailure({ 
-        error: error.message || 'Failed to load album' 
-      })))
-    ))
-  ));
+  loadAlbum$ = createEffect(() => {
+    return this.actions$.pipe(
+      ofType(AlbumActions.loadAlbum),
+      switchMap(({ id }) => 
+        this.albumService.getAlbumById(id).pipe(
+          map(response => {
+            if (response.success && response.data) {
+              return AlbumActions.loadAlbumSuccess({ album: response.data });
+            }
+            throw new Error('Failed to load album');
+          }),
+          catchError(error => of(AlbumActions.loadAlbumFailure({ 
+            error: error.message || 'Failed to load album' 
+          })))
+        )
+      )
+    );
+  });
 
   constructor(
     private actions$: Actions,

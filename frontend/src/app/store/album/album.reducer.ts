@@ -1,19 +1,22 @@
 import { createReducer, on } from '@ngrx/store';
 import { Album } from '../../core/models/album.model';
 import * as AlbumActions from './album.actions';
+import * as SongActions from '../song/song.actions';
 
 export interface AlbumState {
   albums: Album[];
   loading: boolean;
   error: string | null;
   success: boolean;
+  selectedAlbum: Album | null;
 }
 
 export const initialState: AlbumState = {
   albums: [],
   loading: false,
   error: null,
-  success: false
+  success: false,
+  selectedAlbum: null
 };
 
 export const albumReducer = createReducer(
@@ -104,5 +107,42 @@ export const albumReducer = createReducer(
   })),
 
   // Reset State
-  on(AlbumActions.resetAlbumState, () => initialState)
+  on(AlbumActions.resetAlbumState, () => initialState),
+
+  // Update selected album when a song is updated
+  on(SongActions.updateSongSuccess, (state, { song }) => {
+    if (!state.selectedAlbum || !state.selectedAlbum.songs) {
+      return state;
+    }
+
+    const updatedSongs = state.selectedAlbum.songs.map(s => 
+      s.id === song.id ? song : s
+    );
+
+    return {
+      ...state,
+      selectedAlbum: {
+        ...state.selectedAlbum,
+        songs: updatedSongs
+      },
+      // Also update the song in the albums list if it exists
+      albums: state.albums.map(album => {
+        if (album.id === song.albumId && album.songs) {
+          return {
+            ...album,
+            songs: album.songs.map(s => s.id === song.id ? song : s)
+          };
+        }
+        return album;
+      })
+    };
+  }),
+
+  // Load Album
+  on(AlbumActions.loadAlbumSuccess, (state, { album }) => ({
+    ...state,
+    selectedAlbum: album,
+    loading: false,
+    error: null
+  }))
 ); 

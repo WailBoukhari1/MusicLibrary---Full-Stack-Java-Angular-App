@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Store } from '@ngrx/store';
 import { take } from 'rxjs/operators';
@@ -12,8 +12,8 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angul
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatChipsModule } from '@angular/material/chips';
-import { forkJoin, of } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { forkJoin, of, BehaviorSubject, Observable, Subject } from 'rxjs';
+import { map, switchMap, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { Router } from '@angular/router';
 
 import { Album } from '../../../core/models/album.model';
@@ -120,7 +120,7 @@ import { AppState } from '../../../store/app.state';
       </div>
 
       <div class="albums-grid" *ngIf="!isLoading">
-        <mat-card *ngFor="let album of albums" 
+        <mat-card *ngFor="let album of (filteredAlbums$ | async)" 
                   class="album-card" 
                   (click)="onAlbumClick(album.id)">
           <img [src]="getImageUrl(album.imageUrl)" alt="Album cover">
@@ -135,8 +135,8 @@ import { AppState } from '../../../store/app.state';
           </mat-card-content>
           <mat-card-actions>
             <button mat-button color="primary" 
-                    [disabled]="!album.songs || album.songs.length === 0"
-                    (click)="playAlbum(album); $event.stopPropagation()">
+                    [disabled]="!album.songs?.length"
+                    (click)="playAlbum(album, $event)">
               <mat-icon>
                 {{(isCurrentAlbum(album) && (isPlaying$ | async)) ? 'pause' : 'play_arrow'}}
               </mat-icon>
@@ -146,7 +146,7 @@ import { AppState } from '../../../store/app.state';
         </mat-card>
       </div>
 
-      <div class="no-results" *ngIf="!isLoading && albums.length === 0">
+      <div class="no-results" *ngIf="!isLoading && (albums$ | async)?.length === 0">
         <mat-icon>album</mat-icon>
         <p>No albums found matching your criteria</p>
       </div>
@@ -277,21 +277,26 @@ import { AppState } from '../../../store/app.state';
     }
   `]
 })
-export class UserLibraryComponent implements OnInit {
-  albums: Album[] = [];
+export class UserLibraryComponent implements OnInit, OnDestroy {
+  // State management
+  private destroy$ = new Subject<void>();
+  private albumsSubject = new BehaviorSubject<Album[]>([]);
+  private filteredAlbumsSubject = new BehaviorSubject<Album[]>([]);
+  
+  albums$ = this.albumsSubject.asObservable();
+  filteredAlbums$ = this.filteredAlbumsSubject.asObservable();
+  isLoading = false;
+
+  // Player state
   currentAlbumId: string | null = null;
   isPlaying$ = this.store.select(selectIsPlaying);
   currentSong$ = this.store.select(selectCurrentSong);
-  canSkipNext$ = this.store.select(selectCanSkipNext);
-  canSkipPrevious$ = this.store.select(selectCanSkipPrevious);
 
-  filteredAlbums: Album[] = [];
-  filterForm: FormGroup;
-  isLoading = false;
+  // Form and filters
+  filterForm!: FormGroup;
   categories: CategoryEnum[] = [];
   genres: GenreEnum[] = [];
-  years: number[] = [];
-  favorites: Set<string> = new Set();
+  years = Array.from({ length: 50 }, (_, i) => new Date().getFullYear() - i);
 
   constructor(
     private store: Store<AppState>,
@@ -302,151 +307,121 @@ export class UserLibraryComponent implements OnInit {
     private enumService: EnumService,
     private router: Router
   ) {
+    this.initializeForm();
+  }
+
+  private initializeForm(): void {
     this.filterForm = this.formBuilder.group({
       search: [''],
       category: [''],
       genre: [''],
       year: ['']
     });
-
-    const currentYear = new Date().getFullYear();
-    this.years = Array.from({length: 50}, (_, i) => currentYear - i);
   }
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.loadEnums();
     this.loadAlbums();
-    this.setupFilterSubscription();
-    this.currentSong$.subscribe(song => {
-      this.currentAlbumId = song?.albumId || null;
+    this.setupSubscriptions();
+  }
+
+  private setupSubscriptions(): void {
+    // Filter changes
+    this.filterForm.valueChanges.pipe(
+      takeUntil(this.destroy$),
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(() => this.applyFilters());
+
+    // Current song tracking
+    this.currentSong$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(song => {
+      this.currentAlbumId = song?.albumId ?? null;
     });
   }
 
-  private loadEnums() {
-    this.enumService.getCategories().subscribe(response => {
-      if (response.success && response.data) {
-        this.categories = response.data;
-      }
-    });
-
-    this.enumService.getGenres().subscribe(response => {
-      if (response.success && response.data) {
-        this.genres = response.data;
-      }
+  private loadEnums(): void {
+    forkJoin({
+      categories: this.enumService.getCategories(),
+      genres: this.enumService.getGenres()
+    }).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(response => {
+      this.categories = response.categories.data ?? [];
+      this.genres = response.genres.data ?? [];
     });
   }
 
-  getCategoryDisplayName(name: string | undefined): string {
-    return name ? EnumMapper.getDisplayName(this.categories, name) : '';
-  }
-
-  getGenreDisplayName(name: string | undefined): string {
-    return name ? EnumMapper.getDisplayName(this.genres, name) : '';
-  }
-
-  private loadAlbums() {
+  private loadAlbums(): void {
     this.isLoading = true;
-    this.albumService.getAlbums().subscribe(response => {
-      if (response.success && response.data) {
-        console.log('Raw album data:', response.data.content[0]);
-        
-        // For each album, fetch its songs if it has songIds
-        const albumsWithSongs$ = response.data.content.map(album => {
-          if (album.songIds && album.songIds.length > 0) {
-            // Fetch songs for this album
+    
+    this.albumService.getAlbums().pipe(
+      map(response => {
+        if (!response.success || !response.data?.content) {
+          throw new Error('Failed to load albums');
+        }
+        return response.data.content;
+      }),
+      switchMap(albums => {
+        // Map each album to include its songs
+        const albumsWithSongs$ = albums.map(album => {
+          if (album.songs && album.songs.length > 0) {
+            // Songs are already included in the response
+            return of(album);
+          }
+          // If no songs in response, try to load them from songIds
+          if (album.songIds?.length) {
             return forkJoin(
               album.songIds.map(id => this.songService.getSongById(id))
             ).pipe(
               map(songs => ({
                 ...album,
-                songs: songs.filter(s => s !== null) // Filter out any failed song fetches
+                songs: songs.filter(song => song !== null)
               }))
             );
           }
-          return of({ ...album, songs: [] });
+          return of(album);
         });
-
-        // Wait for all song fetches to complete
-        forkJoin(albumsWithSongs$).subscribe(albums => {
-          this.albums = albums;
-          console.log('Processed albums with songs:', this.albums);
-          this.applyFilters();
-        });
-      }
-      this.isLoading = false;
-    });
-  }
-
-  private setupFilterSubscription() {
-    this.filterForm.valueChanges.subscribe(() => {
-      this.applyFilters();
-    });
-  }
-
-  private applyFilters() {
-    const filters = this.filterForm.value;
-    
-    this.filteredAlbums = this.albums.filter(album => {
-      const matchesSearch = !filters.search || 
-        album.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-        album.artist.toLowerCase().includes(filters.search.toLowerCase());
         
-      const matchesCategory = !filters.category || album.category === filters.category;
-      const matchesGenre = !filters.genre || album.genre === filters.genre;
-      const matchesYear = !filters.year || (
-        album.releaseDate && 
-        new Date(album.releaseDate).getFullYear() === Number(filters.year)
-      );
-
-      return matchesSearch && matchesCategory && matchesGenre && matchesYear;
+        return forkJoin(albumsWithSongs$);
+      }),
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (albums) => {
+        console.log('Loaded albums:', albums); // Debug log
+        this.albumsSubject.next(albums);
+        this.applyFilters(); // Apply initial filters
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading albums:', error); // Debug log
+        this.showError('Failed to load albums');
+        this.isLoading = false;
+      }
     });
   }
 
-  clearFilter(filterName: string) {
-    this.filterForm.get(filterName)?.setValue('');
-  }
-
-  hasActiveFilters(): boolean {
-    const filters = this.filterForm.value;
-    return Object.values(filters).some(value => value !== '');
-  }
-
-  getImageUrl(imageUrl: string | null | undefined): string {
-    if (!imageUrl) {
-      return 'assets/images/default-album.png';
+  playAlbum(album: Album, event: Event): void {
+    event.stopPropagation();
+    
+    if (!album.songs?.length) {
+      this.showError('No songs available in this album');
+      return;
     }
-    return `${environment.apiUrl}/files/${imageUrl}`;
+
+    this.store.dispatch(PlayerActions.playAlbum({ songs: album.songs }));
   }
 
-  onImageError(event: any) {
-    event.target.src = 'assets/images/default-album.png';
-  }
-
-  playAlbum(album: Album) {
-    if (album.songs) {
-      this.store.dispatch(PlayerActions.playAlbum({ songs: album.songs }));
-    }
+  onAlbumClick(albumId: string): void {
+    this.router.navigate(['/user/albums', albumId]);
   }
 
   isCurrentAlbum(album: Album): boolean {
     return this.currentAlbumId === album.id;
   }
 
-  toggleFavorite(album: Album) {
-    if (this.isFavorite(album)) {
-      this.favorites.delete(album.id);
-      this.showSuccess('Removed from favorites');
-    } else {
-      this.favorites.add(album.id);
-      this.showSuccess('Added to favorites');
-    }
-  }
-
-  isFavorite(album: Album): boolean {
-    return this.favorites.has(album.id);
-  }
-
-  private showSuccess(message: string) {
+  private showError(message: string): void {
     this.snackBar.open(message, 'Close', {
       duration: 3000,
       horizontalPosition: 'end',
@@ -454,15 +429,60 @@ export class UserLibraryComponent implements OnInit {
     });
   }
 
-  private showError(message: string) {
-    this.snackBar.open(message, 'Close', {
-      duration: 5000,
-      horizontalPosition: 'end',
-      verticalPosition: 'top'
-    });
+  getCategoryDisplayName(name: string | null | undefined): string {
+    return name ? EnumMapper.getDisplayName(this.categories, name) : '';
   }
 
-  onAlbumClick(albumId: string) {
-    this.router.navigate(['/user/albums', albumId]);
+  getGenreDisplayName(name: string | null | undefined): string {
+    return name ? EnumMapper.getDisplayName(this.genres, name) : '';
+  }
+
+  getImageUrl(imageUrl: string | null | undefined): string {
+    return imageUrl ? 
+      `${environment.apiUrl}/files/${imageUrl}` : 
+      'assets/images/default-album.png';
+  }
+
+  private applyFilters(): void {
+    const filters = this.filterForm.value;
+    const albums = this.albumsSubject.value;
+    
+    console.log('Applying filters to albums:', albums); // Debug log
+    
+    const filtered = albums.filter(album => {
+      const searchTerm = (filters.search || '').toLowerCase();
+      const matchesSearch = !searchTerm || 
+        album.title.toLowerCase().includes(searchTerm) ||
+        album.artist.toLowerCase().includes(searchTerm);
+        
+      const matchesCategory = !filters.category || 
+        album.category === (filters.category as unknown as CategoryEnum);
+        
+      const matchesGenre = !filters.genre || 
+        album.genre === (filters.genre as unknown as GenreEnum);
+        
+      const matchesYear = !filters.year || 
+        (album.releaseDate && 
+         new Date(album.releaseDate).getFullYear() === Number(filters.year));
+
+      return matchesSearch && matchesCategory && matchesGenre && matchesYear;
+    });
+
+    console.log('Filtered albums:', filtered); // Debug log
+    this.filteredAlbumsSubject.next(filtered);
+  }
+
+  clearFilter(filterName: string) {
+    this.filterForm.patchValue({ [filterName]: '' });
+  }
+
+  hasActiveFilters(): boolean {
+    return Object.values(this.filterForm.value)
+      .some(value => value !== '' && value !== null);
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 } 
