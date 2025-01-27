@@ -11,11 +11,14 @@ import { PlayerActions } from '../../../store/player/player.actions';
 import { 
   selectCurrentSong, 
   selectIsPlaying,
-  selectVolume 
+  selectVolume,
+  selectCanSkipNext,
+  selectCanSkipPrevious
 } from '../../../store/player/player.selectors';
 import { Song } from '../../../core/models/song.model';
 import { FormsModule } from '@angular/forms';
 import { AudioService } from '../../../core/services/audio.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-player',
@@ -31,7 +34,7 @@ import { AudioService } from '../../../core/services/audio.service';
   template: `
     <mat-toolbar *ngIf="currentTrack$ | async as track" class="player">
       <div class="track-info">
-        <img [src]="track.imageUrl" [alt]="track.title">
+        <img [src]="getImageUrl(track.imageUrl)" [alt]="track.title">
         <div class="details">
           <span class="title">{{track.title}}</span>
           <span class="artist">{{track.artist}}</span>
@@ -40,13 +43,17 @@ import { AudioService } from '../../../core/services/audio.service';
 
       <div class="controls">
         <div class="buttons">
-          <button mat-icon-button (click)="skipPrevious()">
+          <button mat-icon-button 
+                  [disabled]="!(canSkipPrevious$ | async)"
+                  (click)="skipPrevious()">
             <mat-icon>skip_previous</mat-icon>
           </button>
           <button mat-icon-button class="play-button" (click)="togglePlay()">
             <mat-icon>{{(isPlaying$ | async) ? 'pause' : 'play_arrow'}}</mat-icon>
           </button>
-          <button mat-icon-button (click)="skipNext()">
+          <button mat-icon-button 
+                  [disabled]="!(canSkipNext$ | async)"
+                  (click)="skipNext()">
             <mat-icon>skip_next</mat-icon>
           </button>
         </div>
@@ -163,6 +170,8 @@ import { AudioService } from '../../../core/services/audio.service';
 export class PlayerComponent implements OnInit, OnDestroy {
   currentTrack$: Observable<Song | null>;
   isPlaying$: Observable<boolean>;
+  canSkipNext$ = this.store.select(selectCanSkipNext);
+  canSkipPrevious$ = this.store.select(selectCanSkipPrevious);
   private destroy$ = new Subject<void>();
   
   currentTime = 0;
@@ -239,7 +248,12 @@ export class PlayerComponent implements OnInit, OnDestroy {
   skipPrevious() {
     this.store.dispatch(PlayerActions.skipPrevious());
   }
-
+  getImageUrl(imageUrl: string | null | undefined): string {
+    if (!imageUrl) return 'assets/images/default-album.png';
+    return imageUrl.startsWith('http') ? 
+      imageUrl : 
+      `${environment.apiUrl}/files/${imageUrl}`;
+  }
   formatTime(seconds: number): string {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);

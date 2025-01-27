@@ -12,6 +12,8 @@ export class PlayerService {
   private audioElement: HTMLAudioElement;
   private progressSubject = new BehaviorSubject<number>(0);
   progress$ = this.progressSubject.asObservable();
+  private currentPlaylist: Song[] = [];
+  private currentIndex = 0;
 
   constructor(private store: Store) {
     this.audioElement = new Audio();
@@ -29,7 +31,7 @@ export class PlayerService {
   }
 
   play(song: Song): void {
-    this.audioElement.src = song.audioUrl;
+    this.audioElement.src = song.audioUrl ?? '';
     this.audioElement.play();
   }
 
@@ -63,12 +65,34 @@ export class PlayerService {
     return this.audioElement.currentTime;
   }
 
-  playAlbum(album: Album): void {
-    if (album.songs && album.songs.length > 0) {
-      this.store.dispatch(PlayerActions.play({ song: album.songs[0] }));
-      album.songs.slice(1).forEach(song => {
-        this.store.dispatch(PlayerActions.addToQueue({ song }));
-      });
+  setPlaylist(songs: Song[]) {
+    this.currentPlaylist = songs;
+  }
+
+  getCurrentSong(): Song | null {
+    return this.currentPlaylist[this.currentIndex] || null;
+  }
+
+  getNextSong(): Song | null {
+    if (this.currentIndex < this.currentPlaylist.length - 1) {
+      this.currentIndex++;
+      return this.getCurrentSong();
+    }
+    return null;
+  }
+
+  getPreviousSong(): Song | null {
+    if (this.currentIndex > 0) {
+      this.currentIndex--;
+      return this.getCurrentSong();
+    }
+    return null;
+  }
+
+  setCurrentSong(song: Song) {
+    const index = this.currentPlaylist.findIndex(s => s.id === song.id);
+    if (index !== -1) {
+      this.currentIndex = index;
     }
   }
 } 

@@ -1,4 +1,4 @@
-import { createActionGroup, emptyProps, props } from '@ngrx/store';
+import { createAction, createActionGroup, emptyProps, props } from '@ngrx/store';
 import { Song } from '../../core/models/song.model';
 
 export const PlayerActions = createActionGroup({
@@ -10,7 +10,6 @@ export const PlayerActions = createActionGroup({
     'Stop': emptyProps(),
     'Set Volume': props<{ volume: number }>(),
     'Set Progress': props<{ progress: number }>(),
-    'Set Queue': props<{ songs: Song[] }>(),
     'Next Song': emptyProps(),
     'Previous Song': emptyProps(),
     'Toggle Play': emptyProps(),
@@ -19,6 +18,8 @@ export const PlayerActions = createActionGroup({
     'Skip Next': emptyProps(),
     'Skip Previous': emptyProps(),
     'Seek': props<{ time: number }>(),
-    'Add To Queue': props<{ song: Song }>()
   }
-}); 
+});
+
+export const nextSong = createAction('[Player] Next Song');
+export const previousSong = createAction('[Player] Previous Song'); 

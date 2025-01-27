@@ -1,6 +1,7 @@
 import { createReducer, on } from '@ngrx/store';
 import { PlayerActions } from './player.actions';
 import { initialPlayerState } from './player.state';
+import { Album } from '../../core/models/album.model';
 
 export const playerReducer = createReducer(
   initialPlayerState,
@@ -31,13 +32,40 @@ export const playerReducer = createReducer(
     progress
   })),
   
-  on(PlayerActions.setQueue, (state, { songs }) => ({
-    ...state,
-    queue: songs
-  })),
-  
   on(PlayerActions.setPlaying, (state, { isPlaying }) => ({
     ...state,
     isPlaying
-  }))
+  })),
+  
+  on(PlayerActions.playAlbum, (state, { songs }) => ({
+    ...state,
+    currentAlbum: {
+      id: songs[0]?.albumId || '',
+      songs: songs,
+      title: songs[0]?.albumTitle || '',
+      artist: songs[0]?.albumArtist || ''
+    } as Album,
+    currentSong: songs[0],
+    isPlaying: true
+  })),
+  
+  on(PlayerActions.skipNext, (state) => {
+    const currentIndex = state.currentAlbum?.songs?.findIndex(s => s.id === state.currentSong?.id) ?? -1;
+    const nextSong = state.currentAlbum?.songs?.[currentIndex + 1];
+    return {
+      ...state,
+      currentSong: nextSong || state.currentSong,
+      isPlaying: !!nextSong
+    };
+  }),
+  
+  on(PlayerActions.skipPrevious, (state) => {
+    const currentIndex = state.currentAlbum?.songs?.findIndex(s => s.id === state.currentSong?.id) ?? -1;
+    const previousSong = state.currentAlbum?.songs?.[currentIndex - 1];
+    return {
+      ...state,
+      currentSong: previousSong || state.currentSong,
+      isPlaying: !!previousSong
+    };
+  })
 );

@@ -204,10 +204,6 @@ export class SongListComponent implements OnInit {
     this.store.dispatch(PlayerActions.play({ song }));
   }
 
-  addToQueue(song: Song): void {
-    this.store.dispatch(PlayerActions.addToQueue({ song }));
-  }
-
   formatDuration(duration: number): string {
     const minutes = Math.floor(duration / 60);
     const seconds = Math.floor(duration % 60);

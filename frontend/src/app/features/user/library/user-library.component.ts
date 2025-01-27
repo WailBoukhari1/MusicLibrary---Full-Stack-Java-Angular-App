@@ -12,7 +12,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angul
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatChipsModule } from '@angular/material/chips';
-import { forkJoin, of, BehaviorSubject, Observable, Subject } from 'rxjs';
+import { forkJoin, of, BehaviorSubject, Observable, Subject, from } from 'rxjs';
 import { map, switchMap, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { Router } from '@angular/router';
 
@@ -24,14 +24,13 @@ import { environment } from '../../../../environments/environment';
 import { 
   selectCurrentSong,
   selectIsPlaying,
-  selectVolume,
-  selectCanSkipNext,
-  selectCanSkipPrevious
 } from '../../../store/player/player.selectors';
+import { selectAllSongs } from '../../../store/song/song.selectors';
 import { PlayerActions } from '../../../store/player/player.actions';
 import { Song } from '../../../core/models/song.model';
 import { SongService } from '../../../core/services/song.service';
 import { AppState } from '../../../store/app.state';
+import * as SongActions from '../../../store/song/song.actions';
 
 @Component({
   selector: 'app-user-library',
@@ -135,12 +134,9 @@ import { AppState } from '../../../store/app.state';
           </mat-card-content>
           <mat-card-actions>
             <button mat-button color="primary" 
-                    [disabled]="!album.songs?.length"
-                    (click)="playAlbum(album, $event)">
-              <mat-icon>
-                {{(isCurrentAlbum(album) && (isPlaying$ | async)) ? 'pause' : 'play_arrow'}}
-              </mat-icon>
-              {{(isCurrentAlbum(album) && (isPlaying$ | async)) ? 'Pause' : 'Play'}}
+                    (click)="viewAlbumDetails(album)">
+              <mat-icon>visibility</mat-icon>
+              View Details
             </button>
           </mat-card-actions>
         </mat-card>
@@ -289,8 +285,10 @@ export class UserLibraryComponent implements OnInit, OnDestroy {
 
   // Player state
   currentAlbumId: string | null = null;
+  songs$ = this.store.select(selectAllSongs);
   isPlaying$ = this.store.select(selectIsPlaying);
   currentSong$ = this.store.select(selectCurrentSong);
+  currentSongId: string | null = null;
 
   // Form and filters
   filterForm!: FormGroup;
@@ -323,6 +321,13 @@ export class UserLibraryComponent implements OnInit, OnDestroy {
     this.loadEnums();
     this.loadAlbums();
     this.setupSubscriptions();
+    this.store.dispatch(SongActions.loadSongs({ page: 0, size: 100 }));
+    
+    this.currentSong$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(song => {
+      this.currentSongId = song?.id ?? null;
+    });
   }
 
   private setupSubscriptions(): void {
@@ -402,17 +407,6 @@ export class UserLibraryComponent implements OnInit, OnDestroy {
     });
   }
 
-  playAlbum(album: Album, event: Event): void {
-    event.stopPropagation();
-    
-    if (!album.songs?.length) {
-      this.showError('No songs available in this album');
-      return;
-    }
-
-    this.store.dispatch(PlayerActions.playAlbum({ songs: album.songs }));
-  }
-
   onAlbumClick(albumId: string): void {
     this.router.navigate(['/user/albums', albumId]);
   }
@@ -484,5 +478,27 @@ export class UserLibraryComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  togglePlay(song: Song): void {
+    if (this.isCurrentSong(song)) {
+      this.isPlaying$.pipe(take(1)).subscribe(isPlaying => {
+        if (isPlaying) {
+          this.store.dispatch(PlayerActions.pause());
+        } else {
+          this.store.dispatch(PlayerActions.play({ song }));
+        }
+      });
+    } else {
+      this.store.dispatch(PlayerActions.play({ song }));
+    }
+  }
+
+  isCurrentSong(song: Song): boolean {
+    return this.currentSongId === song.id;
+  }
+
+  viewAlbumDetails(album: Album): void {
+    this.router.navigate(['/user/album-details', album.id]);
   }
 } 

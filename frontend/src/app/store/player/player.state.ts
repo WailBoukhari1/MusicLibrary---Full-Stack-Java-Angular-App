@@ -1,3 +1,4 @@
+import { Album } from "../../core/models/album.model";
 import { Song } from "../../core/models/song.model";
 
 export interface PlayerState {
@@ -6,6 +7,8 @@ export interface PlayerState {
   volume: number;
   progress: number;
   queue: Song[];
+  currentAlbum: Album | null;
+
 }
 
 export const initialPlayerState: PlayerState = {
@@ -13,5 +16,6 @@ export const initialPlayerState: PlayerState = {
   isPlaying: false,
   volume: 1,
   progress: 0,
-  queue: []
+  queue: [],
+  currentAlbum: null
 }; 

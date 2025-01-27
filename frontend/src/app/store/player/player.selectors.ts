@@ -23,17 +23,23 @@ export const selectProgress = createSelector(
   (state) => state.progress
 );
 
-export const selectQueue = createSelector(
+export const selectCurrentAlbum = createSelector(
   selectPlayerState,
-  (state) => state.queue
+  (state) => state.currentAlbum
 );
 
 export const selectCanSkipNext = createSelector(
   selectPlayerState,
-  (state) => state.queue.length > 0 && state.currentSong !== null
+  (state) => {
+    const currentIndex = state.currentAlbum?.songs?.findIndex(s => s.id === state.currentSong?.id) ?? -1;
+    return currentIndex < (state.currentAlbum?.songs?.length ?? 0) - 1;
+  }
 );
 
 export const selectCanSkipPrevious = createSelector(
   selectPlayerState,
-  (state) => state.queue.length > 0 && state.currentSong !== null
-); 
+  (state) => {
+    const currentIndex = state.currentAlbum?.songs?.findIndex(s => s.id === state.currentSong?.id) ?? -1;
+    return currentIndex > 0;
+  }
+);
