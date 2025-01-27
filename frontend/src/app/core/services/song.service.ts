@@ -67,4 +67,8 @@ export class SongService extends BaseService {
   getSong(id: string): Observable<ApiResponse<Song>> {
     return this.http.get<ApiResponse<Song>>(`${this.baseUrl}/songs/${id}`);
   }
+
+  getFavoriteSongs(): Observable<ApiResponse<Page<Song>>> {
+    return this.http.get<ApiResponse<Page<Song>>>(`${this.baseUrl}/songs/favorites`);
+  }
 } 

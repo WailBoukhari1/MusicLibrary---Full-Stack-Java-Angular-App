@@ -140,8 +140,8 @@ export const songReducer = createReducer(
   
   on(SongActions.toggleFavoriteSuccess, (state, { song }) => ({
     ...state,
-    songs: state.songs.map(s => s.id === song.id ? song : s),
-    selectedSong: state.selectedSong?.id === song.id ? song : state.selectedSong
+    favorites: state.favorites.map(s => s.id === song.id ? song : s),
+    loading: false
   })),
   
   on(SongActions.toggleFavoriteFailure, (state, { error }) => ({
@@ -191,5 +191,12 @@ export const songReducer = createReducer(
     ...state,
     loading: false,
     error
+  })),
+  
+  on(SongActions.loadFavoriteSongsSuccess, (state, { songs }) => ({
+    ...state,
+    favorites: songs,
+    loading: false,
+    error: null
   }))
 ); 

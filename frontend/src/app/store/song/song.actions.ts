@@ -143,4 +143,15 @@ export const loadSongFailure = createAction(
 
 export const clearSelectedSong = createAction(
   '[Song] Clear Selected Song'
+);
+
+// Add these actions
+export const loadFavoriteSongs = createAction('[Song] Load Favorite Songs');
+export const loadFavoriteSongsSuccess = createAction(
+  '[Song] Load Favorite Songs Success',
+  props<{ songs: Song[] }>()
+);
+export const loadFavoriteSongsFailure = createAction(
+  '[Song] Load Favorite Songs Failure',
+  props<{ error: string }>()
 ); 

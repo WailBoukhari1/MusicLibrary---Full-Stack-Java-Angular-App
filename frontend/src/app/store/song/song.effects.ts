@@ -126,6 +126,18 @@ export class SongEffects {
     ))
   ));
 
+  loadFavoriteSongs$ = createEffect(() => this.actions$.pipe(
+    ofType(SongActions.loadFavoriteSongs),
+    switchMap(() => this.songService.getFavoriteSongs().pipe(
+      map(response => SongActions.loadFavoriteSongsSuccess({ 
+        songs: response.data?.content || [] 
+      })),
+      catchError(error => of(SongActions.loadFavoriteSongsFailure({ 
+        error: error.message || 'Failed to load favorites' 
+      })))
+    ))
+  ));
+
   constructor(
     private actions$: Actions,
     private songService: SongService,
