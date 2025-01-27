@@ -9,10 +9,11 @@ import { MatListModule } from '@angular/material/list';
 import { PlayerActions } from '../../../store/player/player.actions';
 import { selectCurrentAlbum } from '../../../store/album/album.selectors';
 import { AppState } from '../../../store/app.state';
-import { AlbumActions } from '../../../store/album/album.actions';
+import * as AlbumActions from '../../../store/album/album.actions';
 import { RouterModule } from '@angular/router';
 import { Album } from '../../../core/models/album.model';
-import { SongActions } from '../../../store/song/song.actions';
+import * as SongActions from '../../../store/song/song.actions';
+import { Song } from '../../../core/models/song.model';
 
 @Component({
   selector: 'app-album-details',
@@ -57,8 +58,10 @@ import { SongActions } from '../../../store/song/song.actions';
                   <button mat-icon-button [routerLink]="['/user/song-details', song.id]" (click)="$event.stopPropagation()">
                     <mat-icon>info</mat-icon>
                   </button>
-                  <button mat-icon-button (click)="toggleFavorite(song); $event.stopPropagation()">
-                    <mat-icon>{{song.isFavorite ? 'favorite' : 'favorite_border'}}</mat-icon>
+                  <button mat-icon-button 
+                          [color]="song.isFavorite ? 'warn' : ''"
+                          (click)="toggleFavorite(song); $event.stopPropagation()">
+                    <mat-icon>{{ song.isFavorite ? 'favorite' : 'favorite_border' }}</mat-icon>
                   </button>
                 </div>
               </div>
@@ -139,6 +142,10 @@ import { SongActions } from '../../../store/song/song.actions';
     mat-list-item {
       height: auto !important;
     }
+
+    .song-actions button[color="warn"] {
+      color: #f44336;  // Material Design warn color
+    }
   `]
 })
 export class AlbumDetailsComponent implements OnInit, OnDestroy {
@@ -166,12 +173,13 @@ export class AlbumDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  playSong(song: any) {
+  playSong(song: Song) {
     this.store.dispatch(PlayerActions.play({ song }));
   }
 
-  toggleFavorite(song: any) {
-      // Dispatch action to toggle favorite
-    // this.store.dispatch(SongActions.toggleFavorite({ songId: song.id }));
+  toggleFavorite(song: Song) {
+    if (song) {
+      this.store.dispatch(SongActions.toggleFavorite({ song }));
+    }
   }
 } 

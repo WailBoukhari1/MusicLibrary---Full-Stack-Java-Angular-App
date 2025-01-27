@@ -1,4 +1,5 @@
 import { User } from './user.model';
+import { ApiResponse } from './api-response.model';
 
 export interface LoginRequest {
   username: string;
@@ -11,15 +12,11 @@ export interface RegisterRequest {
   password: string;
 }
 
-export interface AuthResponse {
-  success: boolean;
-  data: {
-    token: string;
-    refreshToken: string;
-    username: string;
-    roles: string[];
-  };
-  error: string | null;
+export interface AuthData {
+  token: string;
+  refreshToken: string;
+  username: string;
+  roles: string[];
 }
 
 export interface UserResponse {
@@ -32,8 +29,6 @@ export interface RefreshTokenRequest {
   refreshToken: string;
 }
 
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  message?: string;
-} 
+export type AuthResponse = ApiResponse<AuthData>;
+
+export { ApiResponse }; 

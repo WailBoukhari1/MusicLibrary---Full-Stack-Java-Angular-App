@@ -1,23 +1,20 @@
 import { Routes } from '@angular/router';
+import { SongListComponent } from './song-list/song-list.component';
+import { SongFormComponent } from './song-form/song-form.component';
 import { songResolver } from '../../../core/resolvers/song.resolver';
 
 export const ADMIN_SONGS_ROUTES: Routes = [
   {
     path: '',
-    loadComponent: () => import('./song-list/song-list.component')
-      .then(m => m.SongListComponent)
+    component: SongListComponent
   },
   {
     path: 'create',
-    loadComponent: () => import('./song-form/song-form.component')
-      .then(m => m.SongFormComponent)
+    component: SongFormComponent
   },
   {
     path: 'edit/:id',
-    resolve: {
-      song: songResolver
-    },
-    loadComponent: () => import('./song-form/song-form.component')
-      .then(m => m.SongFormComponent)
+    component: SongFormComponent,
+    resolve: { song: songResolver }
   }
 ]; 

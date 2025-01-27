@@ -1,3 +1,5 @@
+import { ApiResponse, PageResponse } from './api-response.model';
+
 export interface User {
   id: string;
   username: string;
@@ -11,14 +13,5 @@ export interface User {
   updatedAt?: Date;
 }
 
-export interface UserResponse {
-  success: boolean;
-  data: User;
-  error?: string;
-}
-
-export interface UsersResponse {
-  success: boolean;
-  data: User[];
-  error?: string;
-} 
+export type UserPageResponse = ApiResponse<PageResponse<User>>;
+export type SingleUserResponse = ApiResponse<User>; 

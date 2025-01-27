@@ -1,10 +1,37 @@
 import { createReducer, on } from '@ngrx/store';
-import { SongActions } from './song.actions';
-import { initialSongState } from './song.state';
+import { Song } from '../../core/models/song.model';
+import * as SongActions from './song.actions';
 
+export interface SongState {
+  songs: Song[];
+  currentSong: Song | null;
+  selectedSong: Song | null;
+  favorites: Song[];
+  loading: boolean;
+  error: string | null;
+  success: boolean;
+  totalElements: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+}
+
+export const initialState: SongState = {
+  songs: [],
+  currentSong: null,
+  selectedSong: null,
+  favorites: [],
+  loading: false,
+  error: null,
+  success: false,
+  totalElements: 0,
+  totalPages: 0,
+  currentPage: 0,
+  pageSize: 10
+};
 
 export const songReducer = createReducer(
-  initialSongState,
+  initialState,
   
   // Load Songs
   on(SongActions.loadSongs, (state) => ({
@@ -113,13 +140,8 @@ export const songReducer = createReducer(
   
   on(SongActions.toggleFavoriteSuccess, (state, { song }) => ({
     ...state,
-    loading: false,
-    songs: state.songs.map(s => 
-      s.id === song.id ? { ...s, isFavorite: !s.isFavorite } : s
-    ),
-    selectedSong: state.selectedSong?.id === song.id 
-      ? { ...state.selectedSong, isFavorite: !state.selectedSong.isFavorite }
-      : state.selectedSong
+    songs: state.songs.map(s => s.id === song.id ? song : s),
+    selectedSong: state.selectedSong?.id === song.id ? song : state.selectedSong
   })),
   
   on(SongActions.toggleFavoriteFailure, (state, { error }) => ({

@@ -4,23 +4,30 @@ import { Song } from '../models/song.model';
 import { environment } from '../../../environments/environment';
 import { Store } from '@ngrx/store';
 import { PlayerActions } from '../../store/player/player.actions';
+import { BaseService } from './base.service';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
 })
-export class AudioService {
+export class AudioService extends BaseService {
   private audio = new Audio();
   private currentSong = new BehaviorSubject<Song | null>(null);
   private isPlaying = new BehaviorSubject<boolean>(false);
   private currentTime = new BehaviorSubject<number>(0);
   private duration = new BehaviorSubject<number>(0);
 
-  currentSong$ = this.currentSong.asObservable();
-  isPlaying$ = this.isPlaying.asObservable();
-  currentTime$ = this.currentTime.asObservable();
-  duration$ = this.duration.asObservable();
+  readonly currentSong$ = this.currentSong.asObservable();
+  readonly isPlaying$ = this.isPlaying.asObservable();
+  readonly currentTime$ = this.currentTime.asObservable();
+  readonly duration$ = this.duration.asObservable();
 
-  constructor(private store: Store) {
+  constructor(http: HttpClient, private store: Store) {
+    super(http);
+    this.initializeAudioListeners();
+  }
+
+  private initializeAudioListeners(): void {
     this.audio.addEventListener('timeupdate', () => {
       this.currentTime.next(this.audio.currentTime);
       const progress = (this.audio.currentTime / this.audio.duration) * 100;
@@ -37,16 +44,14 @@ export class AudioService {
     });
   }
 
-  play(song: Song) {
-    if (song.audioFileId) {
-      if (this.currentSong.value?.id !== song.id) {
-        this.audio.src = `${environment.apiUrl}/files/${song.audioFileId}`;
-        this.currentSong.next(song);
-      }
-      this.audio.play()
-        .then(() => this.isPlaying.next(true))
-        .catch(error => console.error('Playback failed:', error));
+  play(song: Song): void {
+    if (song.audioFileId && this.currentSong.value?.id !== song.id) {
+      this.audio.src = this.getFileUrl(song.audioFileId);
+      this.currentSong.next(song);
     }
+    this.audio.play()
+      .then(() => this.isPlaying.next(true))
+      .catch(error => this.handleError(error));
   }
 
   pause() {

@@ -4,7 +4,7 @@ import { Store } from '@ngrx/store';
 import { Observable, of } from 'rxjs';
 import { catchError, filter, first, tap } from 'rxjs/operators';
 import { Song } from '../models/song.model';
-import { SongActions } from '../../store/song/song.actions';
+import * as SongActions from '../../store/song/song.actions';
 import { selectSelectedSong } from '../../store/song/song.selectors';
 
 export const songResolver: ResolveFn<Song | null> = (route) => {

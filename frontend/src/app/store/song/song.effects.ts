@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Router } from '@angular/router';
 import { SongService } from '../../core/services/song.service';
-import { SongActions } from './song.actions';
+import * as SongActions from './song.actions';
 import { catchError, map, mergeMap, tap, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { Song } from '../../core/models/song.model';
@@ -32,16 +32,20 @@ export class SongEffects {
       ofType(SongActions.createSong),
       mergeMap(({ song }) =>
         this.songService.createSong(song).pipe(
-          map(response => SongActions.createSongSuccess({ song: response.data as Song   })),
+          map(response => SongActions.createSongSuccess({ song: response.data as Song })),
           catchError(error => of(SongActions.createSongFailure({ error: error.message })))
         )
       )
     )
   );
 
-  createSongSuccess$ = createEffect(() =>
+  songSuccess$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(SongActions.createSongSuccess),
+      ofType(
+        SongActions.createSongSuccess,
+        SongActions.updateSongSuccess,
+        SongActions.deleteSongSuccess
+      ),
       tap(() => {
         this.router.navigate(['/admin/songs']);
       })

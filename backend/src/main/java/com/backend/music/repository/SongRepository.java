@@ -16,4 +16,6 @@ public interface SongRepository extends MongoRepository<Song, String> {
     Page<Song> findByAlbumId(String albumId, Pageable pageable);
 
     Page<Song> findByIsFavoriteTrue(Pageable pageable);
+
+    void deleteByAlbumId(String albumId);
 } 

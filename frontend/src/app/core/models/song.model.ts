@@ -1,5 +1,6 @@
 import { CategoryEnum, GenreEnum } from './enums.model';
 import { Album } from './album.model';
+import { ApiResponse, PageResponse } from './api-response.model';
 
 export interface Song {
   id: string;
@@ -9,9 +10,9 @@ export interface Song {
   description?: string;
   audioFileId?: string;
   imageFileId?: string;
-  albumId?: string;
   audioUrl?: string;
   imageUrl?: string;
+  albumId?: string;
   albumTitle?: string;
   albumArtist?: string;
   duration?: number;
@@ -19,6 +20,9 @@ export interface Song {
   updatedAt?: Date;
   isFavorite?: boolean;
 }
+
+export type SongPageResponse = ApiResponse<PageResponse<Song>>;
+export type SingleSongResponse = ApiResponse<Song>;
 
 export interface SongResponse {
   success: boolean;

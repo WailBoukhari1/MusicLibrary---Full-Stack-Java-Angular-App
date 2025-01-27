@@ -4,7 +4,7 @@ import { Store } from '@ngrx/store';
 import { Observable, of } from 'rxjs';
 import { catchError, filter, first, tap } from 'rxjs/operators';
 import { Album } from '../models/album.model';
-import { AlbumActions } from '../../store/album/album.actions';
+import * as AlbumActions from '../../store/album/album.actions';
 import { selectSelectedAlbum } from '../../store/album/album.selectors';
 
 export const albumResolver: ResolveFn<Album | null> = (route) => {

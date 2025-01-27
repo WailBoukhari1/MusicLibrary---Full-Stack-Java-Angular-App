@@ -1,21 +1,25 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
+import { MatSelectModule } from '@angular/material/select';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { MatCardModule } from '@angular/material/card';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { ActivatedRoute, Router } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
 import { Store } from '@ngrx/store';
-import { AlbumActions } from '../../../../store/album/album.actions';
-import { selectAlbumError, selectAlbumLoading } from '../../../../store/album/album.selectors';
-import { CategoryEnum, GenreEnum } from '../../../../core/models/enums.model';
-import { Subject, takeUntil } from 'rxjs';
-import { environment } from '../../../../../environments/environment';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subject, Observable } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+
 import { EnumService } from '../../../../core/services/enum.service';
 import { EnumValue } from '../../../../core/models/enums.model';
+import { environment } from '../../../../../environments/environment';
+import * as AlbumActions from '../../../../store/album/album.actions';
+import * as AlbumSelectors from '../../../../store/album/album.selectors';
 import { Album } from '../../../../core/models/album.model';
 
 @Component({
@@ -26,35 +30,45 @@ import { Album } from '../../../../core/models/album.model';
     ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule,
     MatButtonModule,
+    MatSelectModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
     MatCardModule,
-    MatProgressSpinnerModule
+    MatIconModule
   ],
   template: `
-    <div class="container">
+    <div class="form-container">
       <mat-card>
         <mat-card-header>
           <mat-card-title>{{ isEditMode ? 'Edit' : 'Create' }} Album</mat-card-title>
         </mat-card-header>
 
         <mat-card-content>
-          <div *ngIf="error$ | async as error" class="error-message">{{ error }}</div>
-
           <form [formGroup]="albumForm" (ngSubmit)="onSubmit()">
             <mat-form-field appearance="outline">
               <mat-label>Title</mat-label>
-              <input matInput formControlName="title" required #titleInput>
-              <mat-error *ngIf="albumForm.get('title')?.invalid">
-                {{ getErrorMessage('title') }}
+              <input matInput formControlName="title" required>
+              <mat-error *ngIf="albumForm.get('title')?.hasError('required')">
+                Title is required
               </mat-error>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Artist</mat-label>
               <input matInput formControlName="artist" required>
-              <mat-error *ngIf="albumForm.get('artist')?.invalid">
-                {{ getErrorMessage('artist') }}
+              <mat-error *ngIf="albumForm.get('artist')?.hasError('required')">
+                Artist is required
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Release Date</mat-label>
+              <input matInput [matDatepicker]="picker" formControlName="releaseDate" required>
+              <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+              <mat-datepicker #picker></mat-datepicker>
+              <mat-error *ngIf="albumForm.get('releaseDate')?.hasError('required')">
+                Release date is required
               </mat-error>
             </mat-form-field>
 
@@ -62,7 +76,7 @@ import { Album } from '../../../../core/models/album.model';
               <mat-label>Category</mat-label>
               <mat-select formControlName="category" required>
                 <mat-option *ngFor="let category of categories" [value]="category.name">
-                  {{category.displayName}}
+                  {{ category.displayName }}
                 </mat-option>
               </mat-select>
               <mat-error *ngIf="albumForm.get('category')?.hasError('required')">
@@ -74,7 +88,7 @@ import { Album } from '../../../../core/models/album.model';
               <mat-label>Genre</mat-label>
               <mat-select formControlName="genre" required>
                 <mat-option *ngFor="let genre of genres" [value]="genre.name">
-                  {{genre.displayName}}
+                  {{ genre.displayName }}
                 </mat-option>
               </mat-select>
               <mat-error *ngIf="albumForm.get('genre')?.hasError('required')">
@@ -82,24 +96,32 @@ import { Album } from '../../../../core/models/album.model';
               </mat-error>
             </mat-form-field>
 
-            <mat-form-field appearance="outline">
-              <mat-label>Release Date</mat-label>
-              <input matInput type="date" formControlName="releaseDate" required>
-            </mat-form-field>
-
-            <div class="image-upload">
-              <input type="file" (change)="onFileSelected($event)" accept="image/*">
-              <div class="image-preview" *ngIf="imagePreview || currentImageUrl">
-                <img [src]="imagePreview || currentImageUrl" alt="Album cover preview">
-              </div>
+            <div class="file-input-group">
+              <button type="button" mat-raised-button (click)="imageFileInput.click()">
+                <mat-icon>image</mat-icon>
+                {{ isEditMode ? 'Change' : 'Upload' }} Cover Image
+              </button>
+              <input #imageFileInput 
+                     type="file" 
+                     (change)="onFileSelected($event)" 
+                     accept="image/*" 
+                     style="display: none">
+              <span class="file-name" *ngIf="imageFile">
+                {{imageFile.name}}
+              </span>
             </div>
 
-            <div class="actions">
+            <div class="image-preview" *ngIf="imagePreview">
+              <img [src]="imagePreview" alt="Album cover preview">
+            </div>
+
+            <div class="form-actions">
               <button mat-button type="button" (click)="onCancel()">Cancel</button>
-              <button mat-raised-button color="primary" type="submit" 
-                      [disabled]="albumForm.invalid || (loading$ | async)">
-                <mat-spinner diameter="20" *ngIf="loading$ | async"></mat-spinner>
-                <span>{{ isEditMode ? 'Update' : 'Create' }}</span>
+              <button mat-raised-button 
+                      color="primary" 
+                      type="submit" 
+                      [disabled]="albumForm.invalid">
+                {{ isEditMode ? 'Update' : 'Create' }} Album
               </button>
             </div>
           </form>
@@ -108,222 +130,166 @@ import { Album } from '../../../../core/models/album.model';
     </div>
   `,
   styles: [`
-    .container {
+    .form-container {
       padding: 20px;
-      max-width: 600px;
+      max-width: 800px;
       margin: 0 auto;
     }
+
     form {
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 16px;
     }
-    .actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 1rem;
-      margin-top: 1rem;
-    }
-    .image-upload {
-      margin: 1rem 0;
-    }
-    .error-message {
-      color: #f44336;
-      padding: 1rem;
-      margin-bottom: 1rem;
-      background-color: #ffebee;
-      border-radius: 4px;
-    }
-    .image-preview {
-      margin-top: 1rem;
-      max-width: 200px;
-    }
-    .image-preview img {
-      width: 100%;
-      height: auto;
-      border-radius: 4px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    button {
+
+    .file-input-group {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 12px;
+    }
+
+    .image-preview {
+      width: 200px;
+      height: 200px;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 16px 0;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .file-name {
+      color: rgba(0, 0, 0, 0.6);
+      font-size: 14px;
     }
   `]
 })
-export class AlbumFormComponent implements OnInit, OnDestroy, AfterViewInit {
+export class AlbumFormComponent implements OnInit, OnDestroy {
   albumForm!: FormGroup;
   isEditMode = false;
-  selectedFile: File | null = null;
-  imagePreview: string | null = null;
-  currentImageUrl: string | null = null;
+  albumId: string | null = null;
+  imagePreview: SafeUrl | null = null;
+  imageFile: File | null = null;
   categories: EnumValue[] = [];
   genres: EnumValue[] = [];
-  loading$ = this.store.select(selectAlbumLoading);
-  error$ = this.store.select(selectAlbumError);
   private destroy$ = new Subject<void>();
-  album: Album | null = null;
-
-  @ViewChild('titleInput') titleInput!: ElementRef<HTMLInputElement>;
 
   constructor(
     private fb: FormBuilder,
-    private route: ActivatedRoute,
-    private router: Router,
     private store: Store,
-    private enumService: EnumService
+    private router: Router,
+    private route: ActivatedRoute,
+    private enumService: EnumService,
+    private sanitizer: DomSanitizer,
+    private cdr: ChangeDetectorRef
   ) {
-    this.initForm();
-  }
-
-  private initForm() {
-    this.albumForm = this.fb.group({
-      title: ['', [
-        Validators.required,
-        Validators.minLength(2),
-        Validators.maxLength(100)
-      ]],
-      artist: ['', [
-        Validators.required,
-        Validators.minLength(2),
-        Validators.maxLength(100)
-      ]],
-      category: ['', Validators.required],
-      genre: ['', Validators.required],
-      releaseDate: ['', [
-        Validators.required,
-        this.dateValidator()
-      ]],
-      description: ['']
-    });
-  }
-
-  private dateValidator(): ValidatorFn {
-    return (control: AbstractControl): ValidationErrors | null => {
-      if (!control.value) return null;
-      const date = new Date(control.value);
-      const now = new Date();
-      return date > now ? { futureDate: true } : null;
-    };
-  }
-
-  // Add error messages to template
-  getErrorMessage(controlName: string): string {
-    const control = this.albumForm.get(controlName);
-    if (!control) return '';
-    
-    if (control.hasError('required')) return 'This field is required';
-    if (control.hasError('minlength')) return 'Input is too short';
-    if (control.hasError('maxlength')) return 'Input is too long';
-    if (control.hasError('futureDate')) return 'Release date cannot be in the future';
-    return '';
-  }
-
-  ngOnInit() {
+    this.initializeForm();
     this.loadEnums();
-    // Get resolved data
-    this.route.data.subscribe(data => {
-      this.album = data['album'];
-      this.isEditMode = !!this.album;
+  }
+
+  private initializeForm(): void {
+    this.albumForm = this.fb.group({
+      title: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
+      artist: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
+      releaseDate: ['', Validators.required],
+      category: ['', Validators.required],
+      genre: ['', Validators.required]
+    });
+  }
+
+  private loadEnums(): void {
+    this.enumService.getCategories()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(response => this.categories = response.data ?? []);
       
-      if (this.album) {
-        // Pre-fill the form
-        this.albumForm.patchValue({
-          title: this.album.title,
-          artist: this.album.artist,
-          category: this.album.category,
-          genre: this.album.genre,
-          releaseDate: this.album.releaseDate,
+    this.enumService.getGenres()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(response => this.genres = response.data ?? []);
+  }
+
+  ngOnInit(): void {
+    this.albumId = this.route.snapshot.paramMap.get('id');
+    this.isEditMode = !!this.albumId;
+
+    if (this.isEditMode && this.albumId) {
+      this.store.select(AlbumSelectors.selectAlbumById(this.albumId))
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(album => {
+          if (album) {
+            this.albumForm.patchValue({
+              title: album.title,
+              artist: album.artist,
+              releaseDate: album.releaseDate ? new Date(album.releaseDate) : new Date(),
+              category: album.category,
+              genre: album.genre
+            });
+
+            if (album.imageUrl) {
+              this.imagePreview = this.sanitizer.bypassSecurityTrustUrl(
+                `${environment.apiUrl}/files/${album.imageUrl}`
+              );
+              this.cdr.detectChanges();
+            }
+          }
         });
-        if (this.album.coverUrl) {
-          this.currentImageUrl = `${environment.apiUrl}/files/images/${this.album.coverUrl}`;
-        }
-      }
-    });
-
-    // Handle store subscriptions
-    this.loading$ = this.store.select(selectAlbumLoading);
-    this.error$ = this.store.select(selectAlbumError);
-  }
-
-  loadEnums() {
-    this.enumService.getCategories().subscribe(response => {
-      if (response?.success && response.data) {
-        this.categories = response.data;
-      }
-    });
-
-    this.enumService.getGenres().subscribe(response => {
-      if (response?.success && response.data) {
-        this.genres = response.data;
-      }
-    });
-  }
-
-  onFileSelected(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (input.files?.length) {
-      const file = input.files[0];
-      if (file.type.startsWith('image/')) {
-        this.selectedFile = file;
-        // Create preview
-        const reader = new FileReader();
-        reader.onload = () => {
-          this.imagePreview = reader.result as string;
-        };
-        reader.readAsDataURL(file);
-      } else {
-        this.store.dispatch(AlbumActions.setError({ 
-          error: 'Please select a valid image file' 
-        }));
-      }
     }
   }
 
-  onSubmit() {
+  onFileSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) {
+      this.imageFile = file;
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.imagePreview = this.sanitizer.bypassSecurityTrustUrl(reader.result as string);
+        this.cdr.detectChanges();
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  onSubmit(): void {
     if (this.albumForm.valid) {
       const formData = new FormData();
-      Object.keys(this.albumForm.value).forEach(key => {
-        formData.append(key, this.albumForm.value[key]);
+      const formValue = this.albumForm.value;
+
+      Object.keys(formValue).forEach(key => {
+        if (key === 'releaseDate') {
+          formData.append(key, formValue[key].toISOString().split('T')[0]);
+        } else {
+          formData.append(key, formValue[key]);
+        }
       });
-      
-      if (this.selectedFile) {
-        formData.append('imageFile', this.selectedFile);
+
+      if (this.imageFile) {
+        formData.append('imageFile', this.imageFile);
       }
 
-      if (this.isEditMode) {
-        const albumId = this.route.snapshot.paramMap.get('id');
-        if (albumId) {
-          this.store.dispatch(AlbumActions.updateAlbum({ id: albumId, album: formData }));
-        }
+      if (this.isEditMode && this.albumId) {
+        this.store.dispatch(AlbumActions.updateAlbum({ id: this.albumId, album: formData }));
       } else {
         this.store.dispatch(AlbumActions.createAlbum({ album: formData }));
       }
-    } else {
-      this.markFormGroupTouched(this.albumForm);
     }
   }
 
-  private markFormGroupTouched(formGroup: FormGroup) {
-    Object.values(formGroup.controls).forEach(control => {
-      control.markAsTouched();
-      if (control instanceof FormGroup) {
-        this.markFormGroupTouched(control);
-      }
-    });
+  onCancel(): void {
+    this.router.navigate(['../'], { relativeTo: this.route });
   }
 
-  onCancel() {
-    this.router.navigate(['/admin/albums']);
-  }
-
-  ngOnDestroy() {
+  ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
-
-  ngAfterViewInit() {
-    // Focus first input on init
-    setTimeout(() => this.titleInput.nativeElement.focus(), 0);
-  }
-} 
+}

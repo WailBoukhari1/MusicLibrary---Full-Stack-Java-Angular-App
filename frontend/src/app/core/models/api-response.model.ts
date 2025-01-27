@@ -1,5 +1,14 @@
 export interface ApiResponse<T> {
   success: boolean;
+  data: T;
+  error?: string;
   message?: string;
-  data?: T;
+}
+
+export interface PageResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
 } 

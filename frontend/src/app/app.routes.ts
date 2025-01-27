@@ -3,6 +3,9 @@ import { AuthGuard, adminGuard, authGuard } from './core/guards/auth.guard';
 import { AdminLayoutComponent } from './shared/layouts/admin/admin-layout.component';
 import { UserLayoutComponent } from './shared/layouts/user/user-layout.component';
 import { noAuthGuard } from './core/guards/no-auth.guard';
+import { SongListComponent } from './features/admin/songs/song-list/song-list.component';
+import { SongFormComponent } from './features/admin/songs/song-form/song-form.component';
+import { songResolver } from './core/resolvers/song.resolver';
 
 export const APP_ROUTES: Routes = [
   // Default redirect

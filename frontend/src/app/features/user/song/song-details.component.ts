@@ -7,7 +7,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { Store } from '@ngrx/store';
 import { ActivatedRoute } from '@angular/router';
 import { selectSelectedSong, selectSongsLoading, selectSongsError } from '../../../store/song/song.selectors';
-import { SongActions } from '../../../store/song/song.actions';
+import * as SongActions from '../../../store/song/song.actions';
 import { PlayerActions } from '../../../store/player/player.actions';
 import { Song } from '../../../core/models/song.model';
 import { environment } from '../../../../environments/environment';

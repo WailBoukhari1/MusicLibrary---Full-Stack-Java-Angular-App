@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -98,7 +99,7 @@ public class AlbumServiceImpl implements AlbumService {
         
         Album savedAlbum = albumRepository.save(album);
         AlbumResponse response = albumMapper.toResponse(savedAlbum);
-        response.setSongs(new ArrayList<>()); // Initialize empty songs list
+        response.setSongs(new ArrayList<>());
         return response;
     }
 
@@ -106,21 +107,51 @@ public class AlbumServiceImpl implements AlbumService {
     @Transactional
     public AlbumResponse updateAlbum(String id, AlbumRequest request) {
         Album album = albumRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Album not found"));
+            .orElseThrow(() -> new RuntimeException("Album not found with id: " + id));
+        
+        try {
+            // Update basic fields
+            album.setTitle(request.getTitle());
+            album.setArtist(request.getArtist());
+            album.setCategory(request.getCategory());
+            album.setGenre(request.getGenre());
             
-        albumMapper.updateEntityFromRequest(request, album);
-        
-        if (request.getImageFile() != null) {
-            if (album.getCoverUrl() != null) {
-                fileStorageService.delete(album.getCoverUrl());
+            // Handle release date
+            if (request.getReleaseDate() != null) {
+                album.setReleaseDate(request.getReleaseDate().atStartOfDay());
             }
-            String imageFileId = fileStorageService.store(request.getImageFile());
-            album.setCoverUrl(imageFileId);
+            
+            // Handle image file update
+            handleImageFileUpdate(album, request.getImageFile());
+            
+            // Update timestamp
+            album.setUpdatedAt(LocalDateTime.now());
+            
+            // Save and return
+            Album updatedAlbum = albumRepository.save(album);
+            return albumMapper.toResponse(updatedAlbum);
+            
+        } catch (Exception e) {
+            throw new RuntimeException("Error updating album: " + e.getMessage(), e);
         }
-        
-        album.setUpdatedAt(LocalDateTime.now());
-        
-        return albumMapper.toResponse(albumRepository.save(album));
+    }
+
+    private void handleImageFileUpdate(Album album, MultipartFile newImageFile) {
+        if (newImageFile != null && !newImageFile.isEmpty()) {
+            try {
+                // Delete old image if exists
+                if (album.getCoverUrl() != null) {
+                    fileStorageService.delete(album.getCoverUrl());
+                }
+                
+                // Store new image
+                String imageFileId = fileStorageService.store(newImageFile);
+                album.setCoverUrl(imageFileId);
+                
+            } catch (Exception e) {
+                throw new RuntimeException("Error handling image file: " + e.getMessage(), e);
+            }
+        }
     }
 
     @Override
@@ -128,11 +159,16 @@ public class AlbumServiceImpl implements AlbumService {
     public void deleteAlbum(String id) {
         Album album = albumRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Album not found"));
-            
+
+        // Delete all songs associated with this album
+        songRepository.deleteByAlbumId(id);
+
+        // Delete album image if exists
         if (album.getCoverUrl() != null) {
             fileStorageService.delete(album.getCoverUrl());
         }
-        
+
+        // Delete the album
         albumRepository.delete(album);
     }
 

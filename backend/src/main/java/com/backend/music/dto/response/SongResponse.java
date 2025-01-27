@@ -14,7 +14,6 @@ public class SongResponse {
     private String id;
     private String title;
     private String artist;
-    private String genre;
     private Integer trackNumber;
     private String description;
     private String audioFileId;

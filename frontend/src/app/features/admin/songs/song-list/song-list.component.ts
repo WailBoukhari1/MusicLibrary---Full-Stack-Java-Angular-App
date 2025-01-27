@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { Song } from '../../../../core/models/song.model';
-import { SongActions } from '../../../../store/song/song.actions';
+import * as SongActions from '../../../../store/song/song.actions';
 import { selectAllSongs, selectSongsLoading, selectSongsError, selectSongsTotalElements } from '../../../../store/song/song.selectors';
 import { CommonModule } from '@angular/common';
 import { MatTableModule } from '@angular/material/table';
@@ -14,12 +14,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { PlayerActions } from '../../../../store/player/player.actions';
 import { environment } from '../../../../../environments/environment';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-song-list',
   standalone: true,
   imports: [
     CommonModule,
+    RouterModule,
     MatTableModule,
     MatPaginatorModule,
     MatProgressSpinnerModule,
@@ -181,7 +183,8 @@ export class SongListComponent implements OnInit {
 
   constructor(
     private router: Router,
-    private store: Store
+    private store: Store,
+    private route: ActivatedRoute
   ) {
     this.songs$ = this.store.select(selectAllSongs);
     this.loading$ = this.store.select(selectSongsLoading);
@@ -212,7 +215,7 @@ export class SongListComponent implements OnInit {
   }
 
   onCreateSong() {
-    this.router.navigate(['/admin/songs/create']);
+    this.router.navigate(['create'], { relativeTo: this.route });
   }
 
   onEdit(songId: string): void {

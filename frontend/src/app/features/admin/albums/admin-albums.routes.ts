@@ -1,23 +1,18 @@
 import { Routes } from '@angular/router';
-import { albumResolver } from '../../../core/resolvers/album.resolver';
+import { AlbumListComponent } from './album-list/album-list.component';
+import { AlbumFormComponent } from './album-form/album-form.component';
 
 export const ADMIN_ALBUMS_ROUTES: Routes = [
   {
     path: '',
-    loadComponent: () => import('./album-list/album-list.component')
-      .then(m => m.AlbumListComponent)
+    component: AlbumListComponent
   },
   {
     path: 'create',
-    loadComponent: () => import('./album-form/album-form.component')
-      .then(m => m.AlbumFormComponent)
+    component: AlbumFormComponent
   },
   {
     path: 'edit/:id',
-    loadComponent: () => import('./album-form/album-form.component')
-      .then(m => m.AlbumFormComponent),
-    resolve: {
-      album: albumResolver
-    }
+    component: AlbumFormComponent
   }
 ]; 

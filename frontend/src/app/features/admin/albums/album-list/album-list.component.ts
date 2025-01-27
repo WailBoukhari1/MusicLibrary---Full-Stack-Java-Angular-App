@@ -5,21 +5,16 @@ import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { Router } from '@angular/router';
-import { environment } from '../../../../../environments/environment';
-import { AlbumService } from '../../../../core/services/album.service';
-import { Album } from '../../../../core/models/album.model';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatCardModule } from '@angular/material/card';
+import { Router, ActivatedRoute } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { 
-  selectAllAlbums,
-  selectAlbumLoading,
-  selectAlbumError,
-  selectTotalElements
-} from '../../../../store/album/album.selectors';
-import { AlbumActions } from '../../../../store/album/album.actions';
 import { Observable } from 'rxjs';
-import { AppState } from '../../../../store/app.state';
-import { MatProgressSpinnerModule, MatSpinner } from '@angular/material/progress-spinner';
+
+import { Album } from '../../../../core/models/album.model';
+import * as AlbumActions from '../../../../store/album/album.actions';
+import { selectAllAlbums, selectAlbumLoading, selectAlbumError, selectTotalElements } from '../../../../store/album/album.selectors';
+import { environment } from '../../../../../environments/environment';
 
 @Component({
   selector: 'app-album-list',
@@ -31,65 +26,76 @@ import { MatProgressSpinnerModule, MatSpinner } from '@angular/material/progress
     MatButtonModule,
     MatIconModule,
     MatPaginatorModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatCardModule
   ],
   template: `
-    <div class="container">
-      <div class="header">
-        <h2>Albums</h2>
-        <button mat-raised-button color="primary" routerLink="create">
-          <mat-icon>add</mat-icon>
-          Add New Album
-        </button>
-      </div>
+    <mat-card class="container">
+      <mat-card-header>
+        <mat-card-title>Albums Management</mat-card-title>
+      </mat-card-header>
 
-      <div class="loading-shade" *ngIf="loading$ | async">
-        <mat-spinner></mat-spinner>
-      </div>
+      <mat-card-content>
+        <div class="actions">
+          <button mat-raised-button color="primary" (click)="onCreateAlbum()">
+            <mat-icon>add</mat-icon>
+            <span>Create New Album</span>
+          </button>
+        </div>
 
-      <ng-container *ngIf="!(loading$ | async)">
-        <ng-container *ngIf="albums$ | async as albums">
-          <mat-table [dataSource]="albums">
-            <ng-container matColumnDef="imageUrl">
-              <mat-header-cell *matHeaderCellDef>Cover</mat-header-cell>
-              <mat-cell *matCellDef="let album">
-                <img [src]="getImageUrl(album.imageUrl)" 
-                     [alt]="album.title" 
-                     class="album-image">
-              </mat-cell>
-            </ng-container>
+        <div class="loading-shade" *ngIf="loading$ | async">
+          <mat-spinner></mat-spinner>
+        </div>
 
-            <ng-container matColumnDef="title">
-              <mat-header-cell *matHeaderCellDef>Title</mat-header-cell>
-              <mat-cell *matCellDef="let album">{{album.title}}</mat-cell>
-            </ng-container>
+        <div *ngIf="error$ | async as error" class="error-message">
+          {{ error }}
+        </div>
 
-            <ng-container matColumnDef="artist">
-              <mat-header-cell *matHeaderCellDef>Artist</mat-header-cell>
-              <mat-cell *matCellDef="let album">{{album.artist}}</mat-cell>
-            </ng-container>
+        <table mat-table [dataSource]="(albums$ | async) || []" class="album-table">
+          <!-- Cover Column -->
+          <ng-container matColumnDef="imageUrl">
+            <th mat-header-cell *matHeaderCellDef>Cover</th>
+            <td mat-cell *matCellDef="let album">
+              <img [src]="getImageUrl(album.imageUrl)" 
+                   [alt]="album.title" 
+                   class="album-cover">
+            </td>
+          </ng-container>
 
-            <ng-container matColumnDef="releaseDate">
-              <mat-header-cell *matHeaderCellDef>Release Date</mat-header-cell>
-              <mat-cell *matCellDef="let album">{{album.releaseDate | date}}</mat-cell>
-            </ng-container>
+          <!-- Title Column -->
+          <ng-container matColumnDef="title">
+            <th mat-header-cell *matHeaderCellDef>Title</th>
+            <td mat-cell *matCellDef="let album">{{album.title}}</td>
+          </ng-container>
 
-            <ng-container matColumnDef="actions">
-              <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
-              <mat-cell *matCellDef="let album">
-                <button mat-icon-button color="primary" (click)="onEdit(album)">
-                  <mat-icon>edit</mat-icon>
-                </button>
-                <button mat-icon-button color="warn" (click)="onDelete(album)">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </mat-cell>
-            </ng-container>
+          <!-- Artist Column -->
+          <ng-container matColumnDef="artist">
+            <th mat-header-cell *matHeaderCellDef>Artist</th>
+            <td mat-cell *matCellDef="let album">{{album.artist}}</td>
+          </ng-container>
 
-            <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-            <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
-          </mat-table>
-        </ng-container>
+          <!-- Release Date Column -->
+          <ng-container matColumnDef="releaseDate">
+            <th mat-header-cell *matHeaderCellDef>Release Date</th>
+            <td mat-cell *matCellDef="let album">{{album.releaseDate | date}}</td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let album">
+              <button mat-icon-button color="primary" (click)="onEdit(album)">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="onDelete(album)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
 
         <mat-paginator
           [length]="(total$ | async) || 0"
@@ -97,29 +103,26 @@ import { MatProgressSpinnerModule, MatSpinner } from '@angular/material/progress
           [pageSizeOptions]="[5, 10, 25, 100]"
           (page)="onPageChange($event)">
         </mat-paginator>
-      </ng-container>
-    </div>
+      </mat-card-content>
+    </mat-card>
   `,
   styles: [`
     .container {
-      padding: 20px;
+      margin: 20px;
     }
-    .header {
+
+    .actions {
+      margin: 20px 0;
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-start;
+    }
+
+    .actions button {
+      display: flex;
       align-items: center;
-      margin-bottom: 20px;
+      gap: 8px;
     }
-    .album-image {
-      width: 50px;
-      height: 50px;
-      object-fit: cover;
-      border-radius: 4px;
-      background-color: #f5f5f5;
-    }
-    mat-table {
-      margin-bottom: 20px;
-    }
+
     .loading-shade {
       position: absolute;
       top: 0;
@@ -132,6 +135,39 @@ import { MatProgressSpinnerModule, MatSpinner } from '@angular/material/progress
       align-items: center;
       justify-content: center;
     }
+
+    .error-message {
+      color: red;
+      margin: 10px 0;
+      padding: 10px;
+      background-color: #ffebee;
+      border-radius: 4px;
+    }
+
+    .album-table {
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    .album-cover {
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+
+    .mat-column-imageUrl {
+      width: 80px;
+    }
+
+    .mat-column-actions {
+      width: 100px;
+      text-align: right;
+    }
+
+    .mat-mdc-row:hover {
+      background-color: #f5f5f5;
+    }
   `]
 })
 export class AlbumListComponent implements OnInit {
@@ -139,14 +175,14 @@ export class AlbumListComponent implements OnInit {
   loading$ = this.store.select(selectAlbumLoading);
   error$ = this.store.select(selectAlbumError);
   total$ = this.store.select(selectTotalElements);
-  
-  currentPage = 0;
+
   pageSize = 10;
   displayedColumns = ['imageUrl', 'title', 'artist', 'releaseDate', 'actions'];
 
   constructor(
-    private store: Store<AppState>,
-    private router: Router
+    private store: Store,
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit() {
@@ -154,32 +190,15 @@ export class AlbumListComponent implements OnInit {
   }
 
   loadAlbums() {
-    this.store.dispatch(AlbumActions.loadAlbums({
-      page: this.currentPage,
-      size: this.pageSize
-    }));
+    this.store.dispatch(AlbumActions.loadAlbums());
   }
 
-  onCreateAlbum(formData: FormData) {
-    this.store.dispatch(AlbumActions.createAlbum({ album: formData }));
-  }
-
-  onUpdateAlbum(id: string, formData: FormData) {
-    this.store.dispatch(AlbumActions.updateAlbum({ id, album: formData }));
-  }
-
-  onDeleteAlbum(id: string) {
-    this.store.dispatch(AlbumActions.deleteAlbum({ id }));
-  }
-
-  onPageChange(event: any) {
-    this.currentPage = event.pageIndex;
-    this.pageSize = event.pageSize;
-    this.loadAlbums();
+  onCreateAlbum() {
+    this.router.navigate(['create'], { relativeTo: this.route });
   }
 
   onEdit(album: Album) {
-    this.router.navigate(['/admin/albums/edit', album.id]);
+    this.router.navigate(['edit', album.id], { relativeTo: this.route });
   }
 
   onDelete(album: Album) {
@@ -189,8 +208,13 @@ export class AlbumListComponent implements OnInit {
       : 'Are you sure you want to delete this album?';
 
     if (confirm(message)) {
-      this.onDeleteAlbum(album.id);
+      this.store.dispatch(AlbumActions.deleteAlbum({ id: album.id }));
     }
+  }
+
+  onPageChange(event: PageEvent) {
+    this.pageSize = event.pageSize;
+    this.loadAlbums();
   }
 
   getImageUrl(imageUrl: string | null | undefined): string {

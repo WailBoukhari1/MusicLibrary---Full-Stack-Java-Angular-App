@@ -1,77 +1,108 @@
 import { createReducer, on } from '@ngrx/store';
-import { AlbumActions } from './album.actions';
-import { initialAlbumState } from './album.state';
+import { Album } from '../../core/models/album.model';
+import * as AlbumActions from './album.actions';
+
+export interface AlbumState {
+  albums: Album[];
+  loading: boolean;
+  error: string | null;
+  success: boolean;
+}
+
+export const initialState: AlbumState = {
+  albums: [],
+  loading: false,
+  error: null,
+  success: false
+};
 
 export const albumReducer = createReducer(
-  initialAlbumState,
+  initialState,
   
-  on(AlbumActions.loadAlbum, state => ({
+  // Load Albums
+  on(AlbumActions.loadAlbums, state => ({
     ...state,
     loading: true,
-    error: null
+    error: null,
+    success: false
   })),
-  
-  on(AlbumActions.loadAlbumSuccess, (state, { album }) => ({
-    ...state,
-    selectedAlbum: album,
-    loading: false
-  })),
-  
-  on(AlbumActions.loadAlbumFailure, (state, { error }) => ({
-    ...state,
-    error,
-    loading: false
-  })),
-  
-  on(AlbumActions.clearSelectedAlbum, state => ({
-    ...state,
-    selectedAlbum: null
-  })),
-
-  on(AlbumActions.loadAlbums, (state) => ({
-    ...state,
-    loading: true,
-    error: null
-  })),
-  
-  on(AlbumActions.loadAlbumsSuccess, (state, { albums, totalElements, totalPages, currentPage, pageSize }) => ({
+  on(AlbumActions.loadAlbumsSuccess, (state, { albums }) => ({
     ...state,
     albums,
-    totalElements,
-    totalPages,
-    currentPage,
-    pageSize,
-    loading: false
+    loading: false,
+    error: null,
+    success: true
   })),
-  
   on(AlbumActions.loadAlbumsFailure, (state, { error }) => ({
     ...state,
+    loading: false,
     error,
-    loading: false
+    success: false
   })),
 
+  // Create Album
+  on(AlbumActions.createAlbum, state => ({
+    ...state,
+    loading: true,
+    error: null,
+    success: false
+  })),
   on(AlbumActions.createAlbumSuccess, (state, { album }) => ({
     ...state,
-    albums: album ? [...state.albums, album] : state.albums,
-    loading: false
+    albums: [...state.albums, album],
+    loading: false,
+    error: null,
+    success: true
+  })),
+  on(AlbumActions.createAlbumFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error,
+    success: false
   })),
 
+  // Update Album
+  on(AlbumActions.updateAlbum, state => ({
+    ...state,
+    loading: true,
+    error: null,
+    success: false
+  })),
   on(AlbumActions.updateAlbumSuccess, (state, { album }) => ({
     ...state,
-    albums: album 
-      ? state.albums.map(a => a.id === album.id ? album : a)
-      : state.albums,
-    loading: false
+    albums: state.albums.map(a => a.id === album.id ? album : a),
+    loading: false,
+    error: null,
+    success: true
+  })),
+  on(AlbumActions.updateAlbumFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error,
+    success: false
   })),
 
+  // Delete Album
+  on(AlbumActions.deleteAlbum, state => ({
+    ...state,
+    loading: true,
+    error: null,
+    success: false
+  })),
   on(AlbumActions.deleteAlbumSuccess, (state, { id }) => ({
     ...state,
-    albums: state.albums.filter(a => a.id !== id),
-    loading: false
+    albums: state.albums.filter(album => album.id !== id),
+    loading: false,
+    error: null,
+    success: true
+  })),
+  on(AlbumActions.deleteAlbumFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error,
+    success: false
   })),
 
-  on(AlbumActions.selectAlbum, (state, { album }) => ({
-    ...state,
-    selectedAlbum: album
-  }))
+  // Reset State
+  on(AlbumActions.resetAlbumState, () => initialState)
 ); 

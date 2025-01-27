@@ -10,15 +10,16 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { Subject, Observable } from 'rxjs';
+import { Subject, Observable, of } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 import { Song } from '../../../../core/models/song.model';
-import { SongActions } from '../../../../store/song/song.actions';
-import { AlbumActions } from '../../../../store/album/album.actions';
-import { selectAllAlbums } from '../../../../store/album/album.selectors';
-import { selectSongsLoading, selectSongsSuccess } from '../../../../store/song/song.selectors';
+import { Album } from '../../../../core/models/album.model';
+import * as SongActions from '../../../../store/song/song.actions';
+import * as SongSelectors from '../../../../store/song/song.selectors';
+import * as AlbumActions from '../../../../store/album/album.actions';
+import * as AlbumSelectors from '../../../../store/album/album.selectors';
 import { environment } from '../../../../../environments/environment';
 
 @Component({
@@ -58,7 +59,7 @@ import { environment } from '../../../../../environments/environment';
               <mat-error *ngIf="songForm.get('artist')?.errors?.['required']">
                 Artist is required
               </mat-error>
-</mat-form-field>
+            </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Album</mat-label>
@@ -196,83 +197,110 @@ import { environment } from '../../../../../environments/environment';
   `]
 })
 export class SongFormComponent implements OnInit, OnDestroy {
-  songForm = this.fb.group({
-    title: ['', Validators.required],
-    artist: ['', Validators.required],
-    genre: ['', Validators.required],
-    albumId: [null as string | null],
-    trackNumber: [null as number | null],
-    description: ['']
-  });
+  songForm!: FormGroup;
   isEditMode = false;
-  song: Song | null = null;
-  loading$ = this.store.select(selectSongsLoading);
-  albums$ = this.store.select(selectAllAlbums);
+  songId: string | null = null;
+  
+  // File handling properties
+  audioFile: File | null = null;
+  imageFile: File | null = null;
   selectedAudioFile: File | null = null;
   selectedImageFile: File | null = null;
-  imagePreviewUrl?: SafeUrl;
   audioPreviewUrl?: SafeUrl;
+  imagePreviewUrl?: SafeUrl;
+  
+  // Observables
+  loading$ = this.store.select(SongSelectors.selectSongLoading);
+  error$ = this.store.select(SongSelectors.selectSongError);
+  success$ = this.store.select(SongSelectors.selectSongSuccess);
+  albums$ = this.store.select(AlbumSelectors.selectAllAlbums);
+  currentSong$ = this.store.select(SongSelectors.selectCurrentSong);
+  
   private destroy$ = new Subject<void>();
-  private submitted = false;
 
   constructor(
     private fb: FormBuilder,
     private store: Store,
-    private route: ActivatedRoute,
     private router: Router,
+    private route: ActivatedRoute,
     private sanitizer: DomSanitizer,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) {
+    this.initializeForm();
+  }
+
+  private initializeForm(): void {
+    this.songForm = this.fb.group({
+      title: ['', [Validators.required, Validators.minLength(2)]],
+      artist: ['', [Validators.required, Validators.minLength(2)]],
+      albumId: [null],
+      trackNumber: [null],
+      description: ['']
+    });
+  }
 
   ngOnInit(): void {
-    this.store.dispatch(AlbumActions.loadAlbums({ page: 0, size: 100 }));
-
-    console.log('Form component initialized');
+    // Get resolved data
+    const resolvedData = this.route.snapshot.data['song'];
     
-    this.route.data.subscribe(data => {
-      console.log('Route data received:', data);
-      this.song = data['song'];
-      this.isEditMode = !!this.song;
-      console.log('Is edit mode:', this.isEditMode);
-      console.log('Song data:', this.song);
-      
-      if (this.song) {
-        this.songForm.patchValue({
-          title: this.song.title,
-          artist: this.song.artist,
-          albumId: this.song.albumId,
-          trackNumber: this.song.trackNumber,
-          description: this.song.description
-        });
+    this.songId = this.route.snapshot.paramMap.get('id');
+    this.isEditMode = !!this.songId;
 
-        if (this.song.imageFileId) {
-          this.imagePreviewUrl = this.sanitizer.bypassSecurityTrustUrl(
-            `${environment.apiUrl}/files/${this.song.imageFileId}`
-          );
-        }
-
-        if (this.song.audioFileId) {
-          this.audioPreviewUrl = this.sanitizer.bypassSecurityTrustUrl(
-            `${environment.apiUrl}/files/${this.song.audioFileId}`
-          );
-        }
+    if (resolvedData) {
+      if (resolvedData.song) {
+        this.patchFormValues(resolvedData.song);
+        this.setupPreviews(resolvedData.song);
       }
-    });
+      
+      // Update albums in the store
+      if (resolvedData.albums) {
+        this.albums$ = of(resolvedData.albums);
+      }
+    }
 
-    this.store.select(selectSongsSuccess)
+    // Handle success/error
+    this.success$
       .pipe(takeUntil(this.destroy$))
       .subscribe(success => {
-        if (success && this.submitted) {
+        if (success) {
           this.router.navigate(['/admin/songs']);
         }
       });
   }
 
+  private patchFormValues(song: Song): void {
+    this.songForm.patchValue({
+      title: song.title,
+      artist: song.artist,
+      albumId: song.albumId,
+      trackNumber: song.trackNumber,
+      description: song.description
+    });
+  }
+
+  private setupPreviews(song: Song): void {
+    if (song.imageUrl) {
+      this.imagePreviewUrl = this.sanitizer.bypassSecurityTrustUrl(
+        `${environment.apiUrl}/files/${song.imageFileId}`
+      );
+    }
+    
+    if (song.audioUrl) {
+      this.audioPreviewUrl = this.sanitizer.bypassSecurityTrustUrl(
+        `${environment.apiUrl}/files/${song.audioFileId}`
+      );
+    }
+    this.cdr.detectChanges();
+  }
+
   onAudioFileSelected(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (file) {
+      this.audioFile = file;
+      this.audioPreviewUrl = this.sanitizer.bypassSecurityTrustUrl(
+        URL.createObjectURL(file)
+      );
       this.selectedAudioFile = file;
-      this.audioPreviewUrl = this.sanitizer.bypassSecurityTrustUrl(URL.createObjectURL(file));
       this.cdr.detectChanges();
     }
   }
@@ -280,10 +308,13 @@ export class SongFormComponent implements OnInit, OnDestroy {
   onImageFileSelected(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (file) {
+      this.imageFile = file;
       this.selectedImageFile = file;
       const reader = new FileReader();
       reader.onload = () => {
-        this.imagePreviewUrl = this.sanitizer.bypassSecurityTrustUrl(reader.result as string);
+        this.imagePreviewUrl = this.sanitizer.bypassSecurityTrustUrl(
+          reader.result as string
+        );
         this.cdr.detectChanges();
       };
       reader.readAsDataURL(file);
@@ -292,28 +323,28 @@ export class SongFormComponent implements OnInit, OnDestroy {
 
   onSubmit(): void {
     if (this.songForm.valid) {
-      this.submitted = true;
       const formData = new FormData();
       const formValue = this.songForm.value;
 
+      // Append form fields
       Object.keys(formValue).forEach(key => {
-        const value = formValue[key as keyof typeof formValue];
-        if (value !== null && value !== undefined) {
-          formData.append(key, String(value));
+        if (formValue[key] !== null && formValue[key] !== undefined) {
+          formData.append(key, formValue[key]);
         }
       });
 
-      if (this.selectedAudioFile) {
-        formData.append('audioFile', this.selectedAudioFile);
+      // Append files if selected
+      if (this.audioFile) {
+        formData.append('audioFile', this.audioFile);
+      }
+      if (this.imageFile) {
+        formData.append('imageFile', this.imageFile);
       }
 
-      if (this.selectedImageFile) {
-        formData.append('imageFile', this.selectedImageFile);
-      }
-
-      if (this.isEditMode && this.song?.id) {
+      // Dispatch appropriate action
+      if (this.isEditMode && this.songId) {
         this.store.dispatch(SongActions.updateSong({ 
-          id: this.song.id, 
+          id: this.songId, 
           song: formData 
         }));
       } else {

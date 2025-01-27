@@ -1,44 +1,49 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
-import { SongState } from './song.state';
+import { SongState } from './song.reducer';
 
-export const selectSongState = createFeatureSelector<SongState>('songs');
-
-export const selectAllSongs = createSelector(
-  selectSongState,
-  (state: SongState) => state.songs
-);
-
-export const selectCurrentSong = createSelector(
-  selectSongState,
-  (state: SongState) => state.selectedSong
-);
-
-export const selectSongsTotalElements = createSelector(
-  selectSongState,
-  (state: SongState) => state.totalElements
-);
+export const selectSongsState = createFeatureSelector<SongState>('songs');
 
 export const selectSongsLoading = createSelector(
-  selectSongState,
-  (state: SongState) => state.loading
+  selectSongsState,
+  state => state?.loading ?? false
 );
 
 export const selectSongsError = createSelector(
-  selectSongState,
-  (state: SongState) => state.error
-);
-
-export const selectFavoriteSongs = createSelector(
-  selectSongState,
-  (state: SongState) => state.favorites
-);
-
-export const selectSelectedSong = createSelector(
-  selectSongState,
-  (state) => state.selectedSong
+  selectSongsState,
+  state => state?.error ?? null
 );
 
 export const selectSongsSuccess = createSelector(
-  selectSongState,
-  (state) => state.success
-); 
+  selectSongsState,
+  state => state?.success ?? false
+);
+
+export const selectCurrentSong = createSelector(
+  selectSongsState,
+  state => state?.currentSong ?? null
+);
+
+export const selectAllSongs = createSelector(
+  selectSongsState,
+  state => state?.songs ?? []
+);
+
+export const selectSongsTotalElements = createSelector(
+  selectSongsState,
+  state => state?.totalElements ?? 0
+);
+
+export const selectFavoriteSongs = createSelector(
+  selectSongsState,
+  state => state?.favorites ?? []
+);
+
+export const selectSelectedSong = createSelector(
+  selectSongsState,
+  state => state?.selectedSong ?? null
+);
+
+// For backward compatibility
+export const selectSongLoading = selectSongsLoading;
+export const selectSongError = selectSongsError;
+export const selectSongSuccess = selectSongsSuccess; 

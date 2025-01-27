@@ -9,6 +9,7 @@ export interface AlbumState {
   totalPages: number;
   currentPage: number;
   pageSize: number;
+  success: boolean;
 }
 
 export const initialAlbumState: AlbumState = {
@@ -19,5 +20,6 @@ export const initialAlbumState: AlbumState = {
   totalElements: 0,
   totalPages: 0,
   currentPage: 0,
-  pageSize: 10
+  pageSize: 10,
+  success: false
 };

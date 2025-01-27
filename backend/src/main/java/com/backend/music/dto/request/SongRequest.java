@@ -7,8 +7,6 @@ import lombok.Data;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import java.util.ArrayList;
-import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
 
 @Data
@@ -31,8 +29,8 @@ public class SongRequest {
     private String albumId;
     
     private Boolean isFavorite;
-    @Builder.Default
-    private List<String> categoryIds = new ArrayList<>();
+
+
     
     private MultipartFile audioFile;
     private MultipartFile imageFile;

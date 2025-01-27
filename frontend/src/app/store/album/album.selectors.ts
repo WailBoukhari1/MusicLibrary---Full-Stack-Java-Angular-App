@@ -1,34 +1,44 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
 import { AlbumState } from './album.state';
 
-export const selectAlbumState = createFeatureSelector<AlbumState>('albums');
+export const selectAlbumStateSelector = createFeatureSelector<AlbumState>('albums');
 
 export const selectAllAlbums = createSelector(
-  selectAlbumState,
+  selectAlbumStateSelector,
   (state: AlbumState) => state.albums
 );
 
 export const selectCurrentAlbum = createSelector(
-  selectAlbumState,
+  selectAlbumStateSelector,
   (state: AlbumState) => state.selectedAlbum
 );
 
 export const selectTotalElements = createSelector(
-  selectAlbumState,
+  selectAlbumStateSelector,
   (state: AlbumState) => state.totalElements
 );
 
 export const selectAlbumLoading = createSelector(
-  selectAlbumState,
+  selectAlbumStateSelector,
   (state: AlbumState) => state.loading
 );
 
 export const selectAlbumError = createSelector(
-  selectAlbumState,
+  selectAlbumStateSelector,
   (state: AlbumState) => state.error
 );
 
 export const selectSelectedAlbum = createSelector(
-  selectAlbumState,
+  selectAlbumStateSelector,
   (state) => state.selectedAlbum
+);
+
+export const selectAlbumSuccess = createSelector(
+  selectAlbumStateSelector,
+  (state) => state.success
+);
+
+export const selectAlbumById = (id: string) => createSelector(
+  selectAlbumStateSelector,
+  (state) => state.albums.find(album => album.id === id)
 ); 

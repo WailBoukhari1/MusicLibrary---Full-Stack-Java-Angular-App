@@ -1,5 +1,6 @@
 package com.backend.music.dto.response;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +22,7 @@ public class AlbumResponse {
     private String title;
     private String artist;
     private String imageUrl;
-    private LocalDateTime releaseDate;
+    private LocalDate releaseDate;
     private Category category;
     private Genre genre;
     @Builder.Default
