@@ -1,34 +1,127 @@
 pipeline {
     agent any
     
+    environment {
+        DOCKER_IMAGE = 'tsukiiya101/music-streaming-backend'
+        DOCKER_TAG = "${env.BUILD_NUMBER}"
+        SONAR_PROJECT_KEY = 'MusicStreamingBackend'
+        JWT_SECRET = credentials('jwt-secret')
+        MONGODB_URI = credentials('mongodb-uri')
+    }
+    
     tools {
         maven 'Maven 3'
         jdk 'JDK 17'
     }
     
     stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
         stage('Build') {
             steps {
-                sh 'mvn clean package -DskipTests'
+                script {
+                    dir('backend') {
+                        bat 'mvn clean package -DskipTests'
+                    }
+                }
             }
         }
         
         stage('Test') {
             steps {
-                sh 'mvn test'
+                script {
+                    dir('backend') {
+                        bat 'mvn test'
+                    }
+                }
+            }
+            post {
+                always {
+                    junit '**/target/surefire-reports/*.xml'
+                }
             }
         }
         
-        stage('Docker Build') {
+        stage('SonarQube Analysis') {
             steps {
-                sh 'docker build -t music-streaming-backend .'
+                script {
+                    dir('backend') {
+                        withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+                            bat """
+                                mvn clean verify sonar:sonar \
+                                -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                                -Dsonar.projectName=${SONAR_PROJECT_KEY} \
+                                -Dsonar.host.url=http://localhost:9000 \
+                                -Dsonar.token=%SONAR_TOKEN%
+                            """
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Docker Build and Push') {
+            steps {
+                script {
+                    dir('backend') {
+                        withCredentials([usernamePassword(
+                            credentialsId: 'dockerhub-credentials',
+                            usernameVariable: 'DOCKER_USERNAME',
+                            passwordVariable: 'DOCKER_PASSWORD'
+                        )]) {
+                            bat "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                            bat "docker login -u %DOCKER_USERNAME% -p %DOCKER_PASSWORD%"
+                            bat "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                            bat "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest"
+                            bat "docker push ${DOCKER_IMAGE}:latest"
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Deploy') {
+            steps {
+                script {
+                    dir('backend') {
+                        withCredentials([usernamePassword(
+                            credentialsId: 'dockerhub-credentials',
+                            usernameVariable: 'DOCKER_USERNAME',
+                            passwordVariable: 'DOCKER_PASSWORD'
+                        )]) {
+                            bat """
+                                docker-compose down
+                                SET SPRING_PROFILES_ACTIVE=prod
+                                SET JWT_SECRET=%JWT_SECRET%
+                                SET SPRING_DATA_MONGODB_URI=%MONGODB_URI%
+                                docker-compose up -d
+                            """
+                        }
+                    }
+                }
             }
         }
     }
     
     post {
         always {
-            junit '**/target/surefire-reports/*.xml'
+            cleanWs()
+            bat 'docker logout'
+        }
+        success {
+            echo 'Pipeline succeeded!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+            emailext (
+                subject: "Pipeline Failed: ${currentBuild.fullDisplayName}",
+                body: "Something went wrong with ${env.BUILD_URL}",
+                recipientProviders: [[$class: 'DevelopersRecipientProvider']]
+            )
         }
     }
 } 

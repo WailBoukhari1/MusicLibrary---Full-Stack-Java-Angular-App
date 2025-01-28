@@ -1,0 +1,11 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/musicdb
+
+jwt:
+  secret: devSecretKey123!@#
+  expiration: 86400000
+
+server:
+  port: 8080 

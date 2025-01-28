@@ -59,7 +59,13 @@ public class Album {
     @Field(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Field(name = "image_file_id")
+    private String imageFileId;
+
     @Builder.Default
     private Boolean isFavorite = false;
+
+    @Builder.Default
+    private List<String> songIds = new ArrayList<>();
 }
 
