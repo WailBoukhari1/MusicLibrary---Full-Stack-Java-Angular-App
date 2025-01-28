@@ -126,10 +126,5 @@ music-library/
 ## 📝 License
 This project is licensed under the **MIT License** - see the LICENSE file for details.
 
-## 🙏 Acknowledgments
-- **Spring Boot team** for the amazing framework.
-- **Angular team** for the fantastic frontend framework.
-- All contributors who have helped this project grow.
-
 ## 🖼️ Preview Images
 <!-- Add your images here -->
