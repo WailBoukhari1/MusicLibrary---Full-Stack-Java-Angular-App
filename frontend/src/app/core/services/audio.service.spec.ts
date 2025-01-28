@@ -13,7 +13,8 @@ describe('AudioService', () => {
     id: '1',
     title: 'Test Song',
     audioFileId: 'audio-123',
-    duration: 180
+    duration: 180,
+    artist: 'Artist 1'
   };
 
   beforeEach(() => {

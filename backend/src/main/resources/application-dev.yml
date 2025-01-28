@@ -4,7 +4,8 @@ spring:
       uri: mongodb://localhost:27017/musicdb
 
 jwt:
-  secret: devSecretKey123!@#
+  # Using a longer, more secure secret key (at least 256 bits)
+  secret: 5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437
   expiration: 86400000
 
 server:

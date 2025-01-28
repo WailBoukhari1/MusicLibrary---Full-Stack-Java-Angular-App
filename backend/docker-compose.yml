@@ -6,7 +6,7 @@ services:
     environment:
       - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/musicdb
       - SPRING_PROFILES_ACTIVE=dev
-      - JWT_SECRET=your_jwt_secret_key_here
+      - JWT_SECRET=5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437
       - JWT_EXPIRATION=86400000
     volumes:
       - ./uploads:/app/uploads
