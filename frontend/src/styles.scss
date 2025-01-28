@@ -1,5 +1,7 @@
 @use '@angular/material' as mat;
-
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 // Include the common styles for Angular Material
 @include mat.core();
 
@@ -15,3 +17,8 @@ $your-theme: mat.define-light-theme((
 
 // Include theme styles for core and each component used
 @include mat.all-component-themes($your-theme);
+*{
+margin: 0%;
+padding: 0%;
+box-sizing: border-box;
+}

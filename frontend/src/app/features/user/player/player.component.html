@@ -1,0 +1,63 @@
+<mat-toolbar *ngIf="currentTrack$ | async as track" class="fixed bottom-0 left-0 right-0 z-50">
+  <!-- Track Info -->
+  <div class="flex items-center gap-3">
+    <img [src]="getImageUrl(track.imageUrl)" 
+         [alt]="track.title"
+         class="w-12 h-12 rounded" />
+    <div class="flex flex-col min-w-0">
+      <span class="truncate">{{ track.title }}</span>
+      <span class="truncate text-sm text-gray-500">{{ track.artist }}</span>
+    </div>
+  </div>
+
+  <!-- Player Controls -->
+  <div class="flex-1 flex flex-col items-center">
+    <!-- Control Buttons -->
+    <div class="flex items-center gap-2">
+      <button mat-icon-button 
+              [disabled]="!(canSkipPrevious$ | async)"
+              (click)="skipPrevious()">
+        <mat-icon>skip_previous</mat-icon>
+      </button>
+      
+      <button mat-mini-fab 
+              color="primary"
+              (click)="togglePlay()">
+        <mat-icon>{{ (isPlaying$ | async) ? "pause" : "play_arrow" }}</mat-icon>
+      </button>
+      
+      <button mat-icon-button
+              [disabled]="!(canSkipNext$ | async)"
+              (click)="skipNext()">
+        <mat-icon>skip_next</mat-icon>
+      </button>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="flex items-center w-full">
+      <span class="text-sm">{{ formatTime(currentTime) }}</span>
+      <mat-slider class="flex-1">
+        <input matSliderThumb
+               [max]="duration"
+               [step]="1"
+               [value]="currentTime"
+               (valueChange)="seek($event)" />
+      </mat-slider>
+      <span class="text-sm">{{ formatTime(duration) }}</span>
+    </div>
+  </div>
+
+  <!-- Volume Control -->
+  <div class="flex items-center gap-2">
+    <button mat-icon-button (click)="toggleMute()">
+      <mat-icon>{{ isMuted ? "volume_off" : "volume_up" }}</mat-icon>
+    </button>
+    <mat-slider>
+      <input matSliderThumb
+             [max]="100"
+             [step]="1"
+             [value]="volume"
+             (valueChange)="setVolume($event)" />
+    </mat-slider>
+  </div>
+</mat-toolbar>

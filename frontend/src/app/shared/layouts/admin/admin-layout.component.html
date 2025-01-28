@@ -1,0 +1,90 @@
+<mat-sidenav-container class="h-screen w-full bg-gray-50">
+  <mat-sidenav #sidenav 
+    [mode]="isSmallScreen ? 'over' : 'side'" 
+    [opened]="!isSmallScreen"
+    class="w-[280px] sm:w-64 border-r border-gray-200 bg-white shadow-sm z-20">
+    
+    <div class="flex items-center gap-3 p-4 border-b border-gray-200">
+      <mat-icon class="text-primary-600">music_note</mat-icon>
+      <span class="text-lg font-semibold text-gray-800">Music Admin</span>
+      <button *ngIf="isSmallScreen" 
+        mat-icon-button 
+        class="ml-auto" 
+        (click)="toggleMobileMenu()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <mat-nav-list class="p-2">
+      <a mat-list-item routerLink="/admin/dashboard" routerLinkActive="bg-primary-50"
+        class="mb-1 rounded-lg hover:bg-gray-50 transition-colors"
+        (click)="isSmallScreen && toggleMobileMenu()">
+        <mat-icon matListItemIcon class="text-gray-600">dashboard</mat-icon>
+        <span class="text-gray-700">Dashboard</span>
+      </a>
+      <a mat-list-item routerLink="/admin/albums" routerLinkActive="bg-primary-50"
+        class="mb-1 rounded-lg hover:bg-gray-50 transition-colors"
+        (click)="isSmallScreen && toggleMobileMenu()">
+        <mat-icon matListItemIcon class="text-gray-600">album</mat-icon>
+        <span class="text-gray-700">Albums</span>
+      </a>
+      <a mat-list-item routerLink="/admin/songs" routerLinkActive="bg-primary-50"
+        class="mb-1 rounded-lg hover:bg-gray-50 transition-colors"
+        (click)="isSmallScreen && toggleMobileMenu()">
+        <mat-icon matListItemIcon class="text-gray-600">music_note</mat-icon>
+        <span class="text-gray-700">Songs</span>
+      </a>
+      <a mat-list-item routerLink="/admin/users" routerLinkActive="bg-primary-50"
+        class="mb-1 rounded-lg hover:bg-gray-50 transition-colors"
+        (click)="isSmallScreen && toggleMobileMenu()">
+        <mat-icon matListItemIcon class="text-gray-600">people</mat-icon>
+        <span class="text-gray-700">Users</span>
+      </a>
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="bg-gray-50">
+    <mat-toolbar class="bg-white border-b border-gray-200 px-4 shadow-sm">
+      <button mat-icon-button 
+        *ngIf="isSmallScreen" 
+        (click)="toggleMobileMenu()">
+        <mat-icon>menu</mat-icon>
+      </button>
+      <span class="text-base sm:text-lg font-medium text-gray-800 truncate">
+        Music Streaming Admin
+      </span>
+      <span class="flex-1"></span>
+      <div class="flex items-center gap-2">
+        <button mat-button class="hidden md:flex items-center gap-2 hover:bg-gray-50" 
+          routerLink="/user/library">
+          <mat-icon class="text-gray-600">library_music</mat-icon>
+          <span class="text-gray-700">Music Library</span>
+        </button>
+        <button mat-icon-button [matMenuTriggerFor]="menu" 
+          class="hover:bg-gray-50">
+          <mat-icon class="text-gray-600">account_circle</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu" class="min-w-[200px]">
+          <button mat-menu-item routerLink="/user/library" class="md:hidden">
+            <mat-icon class="text-gray-600">library_music</mat-icon>
+            <span class="text-gray-700">Music Library</span>
+          </button>
+          <button mat-menu-item (click)="logout()" class="hover:bg-gray-50">
+            <mat-icon class="text-gray-600">exit_to_app</mat-icon>
+            <span class="text-gray-700">Logout</span>
+          </button>
+        </mat-menu>
+      </div>
+    </mat-toolbar>
+
+    <div class="p-4 sm:p-6">
+      <router-outlet></router-outlet>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>
+
+<div class="fixed inset-0 bg-black/50 lg:hidden transition-opacity duration-200" 
+  [class.opacity-0]="!sidenav?.opened"
+  [class.invisible]="!sidenav?.opened"
+  (click)="toggleMobileMenu()">
+</div>

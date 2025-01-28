@@ -36,165 +36,7 @@ import { environment } from '../../../../../environments/environment';
     MatProgressBarModule,
     MatIconModule
   ],
-  template: `
-    <div class="form-container">
-      <mat-card>
-        <mat-card-header>
-          <mat-card-title>{{ isEditMode ? 'Edit' : 'Create' }} Song</mat-card-title>
-        </mat-card-header>
-
-        <mat-card-content>
-          <form [formGroup]="songForm" (ngSubmit)="onSubmit()">
-            <mat-form-field appearance="outline">
-              <mat-label>Title</mat-label>
-              <input matInput formControlName="title" required>
-              <mat-error *ngIf="songForm.get('title')?.errors?.['required']">
-                Title is required
-              </mat-error>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Artist</mat-label>
-              <input matInput formControlName="artist" required>
-              <mat-error *ngIf="songForm.get('artist')?.errors?.['required']">
-                Artist is required
-              </mat-error>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Album</mat-label>
-              <mat-select formControlName="albumId">
-                <mat-option [value]="null">No Album</mat-option>
-                <mat-option *ngFor="let album of albums$ | async" [value]="album.id">
-                  {{album.title}}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Track Number</mat-label>
-              <input matInput type="number" formControlName="trackNumber">
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Description</mat-label>
-              <textarea matInput formControlName="description" rows="3"></textarea>
-            </mat-form-field>
-
-            <div class="file-inputs">
-              <div class="file-input-group">
-                <button type="button" mat-raised-button (click)="audioFileInput.click()">
-                  <mat-icon>audiotrack</mat-icon>
-                  {{ isEditMode ? 'Change' : 'Upload' }} Audio File
-                </button>
-                <input #audioFileInput type="file" (change)="onAudioFileSelected($event)" 
-                       accept="audio/*" style="display: none">
-                <span class="file-name" *ngIf="selectedAudioFile">
-                  {{selectedAudioFile.name}}
-                </span>
-              </div>
-
-              <div class="file-input-group">
-                <button type="button" mat-raised-button (click)="imageFileInput.click()">
-                  <mat-icon>image</mat-icon>
-                  {{ isEditMode ? 'Change' : 'Upload' }} Cover Image
-                </button>
-                <input #imageFileInput type="file" (change)="onImageFileSelected($event)" 
-                       accept="image/*" style="display: none">
-                <span class="file-name" *ngIf="selectedImageFile">
-                  {{selectedImageFile.name}}
-                </span>
-              </div>
-            </div>
-
-            <div class="preview-section">
-              <div class="image-preview" *ngIf="imagePreviewUrl">
-                <img [src]="imagePreviewUrl" alt="Cover preview">
-              </div>
-              <div class="audio-preview" *ngIf="audioPreviewUrl">
-                <audio controls [src]="audioPreviewUrl">
-                  Your browser does not support the audio element.
-                </audio>
-              </div>
-            </div>
-
-            <div class="form-actions">
-              <button mat-button type="button" (click)="onCancel()">Cancel</button>
-              <button mat-raised-button color="primary" type="submit"
-                      [disabled]="songForm.invalid || (loading$ | async)">
-                {{ isEditMode ? 'Update' : 'Create' }} Song
-              </button>
-            </div>
-          </form>
-        </mat-card-content>
-      </mat-card>
-    </div>
-  `,
-  styles: [`
-    .form-container {
-      padding: 20px;
-      max-width: 800px;
-      margin: 0 auto;
-    }
-
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .file-inputs {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .file-input-group {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .preview-section {
-      display: flex;
-      gap: 20px;
-      margin: 20px 0;
-    }
-
-    .image-preview {
-      width: 200px;
-      height: 200px;
-      border-radius: 4px;
-      overflow: hidden;
-    }
-
-    .image-preview img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .audio-preview {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .audio-preview audio {
-      width: 100%;
-    }
-
-    .form-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-      margin-top: 20px;
-    }
-
-    .file-name {
-      color: rgba(0, 0, 0, 0.6);
-      font-size: 14px;
-    }
-  `]
+  templateUrl:"song-form.component.html"
 })
 export class SongFormComponent implements OnInit, OnDestroy {
   songForm!: FormGroup;
@@ -218,6 +60,9 @@ export class SongFormComponent implements OnInit, OnDestroy {
   
   private destroy$ = new Subject<void>();
 
+  // Add these properties
+  selectedAlbum: Album | null = null;
+
   constructor(
     private fb: FormBuilder,
     private store: Store,
@@ -240,6 +85,9 @@ export class SongFormComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Load albums when component initializes
+    this.store.dispatch(AlbumActions.loadAlbums());
+
     // Get resolved data
     const resolvedSong = this.route.snapshot.data['song'];
     
@@ -258,6 +106,20 @@ export class SongFormComponent implements OnInit, OnDestroy {
         if (success) {
           this.router.navigate(['/admin/songs']);
         }
+      });
+
+    // Add album selection handling
+    this.songForm.get('albumId')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(albumId => {
+        if (albumId) {
+          this.albums$.pipe(takeUntil(this.destroy$)).subscribe(albums => {
+            this.selectedAlbum = albums.find(album => album.id === albumId) || null;
+          });
+        } else {
+          this.selectedAlbum = null;
+        }
+        this.cdr.detectChanges();
       });
   }
 
@@ -345,7 +207,10 @@ export class SongFormComponent implements OnInit, OnDestroy {
       }
     }
   }
-
+  getImageUrl(coverUrl: string | null | undefined): string {
+    if (!coverUrl) return 'assets/default-songs.png';
+    return `${environment.apiUrl}/files/${coverUrl}`;
+  }
   onCancel(): void {
     this.router.navigate(['/admin/songs']);
   }

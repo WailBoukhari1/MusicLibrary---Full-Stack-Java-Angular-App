@@ -1,0 +1,196 @@
+<div class="min-h-screen bg-gray-50/30">
+  <div class="container mx-auto px-4 py-8">
+    <!-- Header Section -->
+    <div class="bg-white rounded-2xl shadow-sm p-8 mb-6">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <!-- Title and Stats -->
+        <div>
+          <div class="flex items-center gap-3">
+            <div class="bg-primary-100 p-2 rounded-xl">
+              <mat-icon class="text-primary-600 transform scale-125">people</mat-icon>
+            </div>
+            <div>
+              <h1 class="text-2xl font-bold text-gray-900">Users Management</h1>
+              <p class="text-gray-500">Manage system users and their permissions</p>
+            </div>
+          </div>
+          
+          <!-- Stats Card -->
+          <div class="mt-6 bg-gray-50 rounded-xl p-4 border border-gray-100">
+            <div class="flex items-center gap-6">
+              <div>
+                <span class="text-sm text-gray-500">Total Users</span>
+                <div class="text-lg font-bold text-primary-600">{{ (totalElements$ | async) || 0 }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content Section -->
+    <div class="bg-white rounded-2xl shadow-sm">
+      <!-- Loading Overlay -->
+      <div class="relative">
+        <div class="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50"
+             *ngIf="loading$ | async">
+          <div class="flex flex-col items-center gap-3">
+            <mat-spinner diameter="32"></mat-spinner>
+            <span class="text-sm text-gray-600">Loading users...</span>
+          </div>
+        </div>
+
+        <!-- Error Alert -->
+        <div *ngIf="error$ | async as error" 
+             class="p-4 m-4 rounded-lg bg-red-50 border-l-4 border-red-500">
+          <div class="flex items-center gap-3">
+            <mat-icon class="text-red-500">error_outline</mat-icon>
+            <span class="text-red-700">{{ error }}</span>
+          </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="overflow-hidden">
+          <table mat-table [dataSource]="dataSource" class="w-full">
+            <!-- Username Column -->
+            <ng-container matColumnDef="username">
+              <th mat-header-cell *matHeaderCellDef class="!pl-6">Username</th>
+              <td mat-cell *matCellDef="let user" class="!pl-6">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
+                    <span class="text-primary-600 font-medium">{{ user.username.charAt(0).toUpperCase() }}</span>
+                  </div>
+                  <span class="font-medium text-gray-900">{{ user.username }}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Email Column -->
+            <ng-container matColumnDef="email">
+              <th mat-header-cell *matHeaderCellDef>Email</th>
+              <td mat-cell *matCellDef="let user">
+                <div class="flex items-center gap-2">
+                  <mat-icon class="text-gray-400 scale-75">email</mat-icon>
+                  <span class="text-gray-600">{{ user.email }}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Roles Column -->
+            <ng-container matColumnDef="roles">
+              <th mat-header-cell *matHeaderCellDef>Roles</th>
+              <td mat-cell *matCellDef="let user">
+                <div class="flex gap-2">
+                  <span *ngFor="let role of user.roles" 
+                        [class]="role === 'ADMIN' ? 
+                          'px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700' : 
+                          'px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700'">
+                    {{ role }}
+                  </span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Status Column -->
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Status</th>
+              <td mat-cell *matCellDef="let user">
+                <span [class]="user.active ? 
+                  'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800' : 
+                  'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800'">
+                  <span class="w-1.5 h-1.5 rounded-full mr-1.5"
+                        [class]="user.active ? 'bg-green-400' : 'bg-gray-400'"></span>
+                  {{ user.active ? "Active" : "Inactive" }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef class="!pr-6"></th>
+              <td mat-cell *matCellDef="let user" class="!pr-6">
+                <div class="flex items-center justify-end gap-2">
+                  <!-- Role Menu -->
+                  <button mat-stroked-button
+                          [matMenuTriggerFor]="roleMenu"
+                          class="!min-w-0 !px-3 !py-1 !text-primary-600 !border-primary-200 hover:!bg-primary-50">
+                    <span class="flex items-center gap-1.5">
+                      <mat-icon class="!w-4 !h-4 !text-base">admin_panel_settings</mat-icon>
+                      <span class="text-sm font-medium">Roles</span>
+                    </span>
+                  </button>
+                  <mat-menu #roleMenu="matMenu" class="!min-w-[200px]">
+                    <div (click)="$event.stopPropagation()" class="p-3">
+                      <div class="space-y-2">
+                        <mat-checkbox [checked]="user.roles.includes('USER')"
+                                    (change)="toggleRole(user, 'USER', $event.checked)"
+                                    class="block">
+                          User
+                        </mat-checkbox>
+                        <mat-checkbox [checked]="user.roles.includes('ADMIN')"
+                                    (change)="toggleRole(user, 'ADMIN', $event.checked)"
+                                    class="block">
+                          Admin
+                        </mat-checkbox>
+                      </div>
+                    </div>
+                  </mat-menu>
+
+                  <!-- Status Toggle -->
+                  <button mat-stroked-button
+                          (click)="onToggleUserStatus(user)"
+                          [class]="user.active ? 
+                            '!min-w-0 !px-3 !py-1 !text-red-600 !border-red-200 hover:!bg-red-50' :
+                            '!min-w-0 !px-3 !py-1 !text-green-600 !border-green-200 hover:!bg-green-50'"
+                          [matTooltip]="user.active ? 'Deactivate User' : 'Activate User'">
+                    <span class="flex items-center gap-1.5">
+                      <mat-icon class="!w-4 !h-4 !text-base">{{ user.active ? 'person_off' : 'person' }}</mat-icon>
+                      <span class="text-sm font-medium">{{ user.active ? 'Deactivate' : 'Activate' }}</span>
+                    </span>
+                  </button>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Table Rows -->
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"
+                class="!bg-gray-50 !h-12"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns"
+                class="hover:bg-gray-50/50 transition-colors"></tr>
+          </table>
+
+          <!-- Paginator -->
+          <mat-paginator [length]="totalElements$ | async"
+                        [pageSize]="10"
+                        [pageSizeOptions]="[5, 10, 25, 100]"
+                        (page)="onPageChange($event)"
+                        class="border-t">
+          </mat-paginator>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  ::ng-deep .mat-mdc-table {
+    background: transparent !important;
+  }
+  
+  ::ng-deep .mat-mdc-paginator {
+    background: transparent !important;
+  }
+
+  ::ng-deep .mat-mdc-header-cell {
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    color: #6B7280 !important;
+  }
+
+  ::ng-deep .mat-mdc-checkbox .mdc-checkbox .mdc-checkbox__native-control:enabled:checked~.mdc-checkbox__background {
+    background-color: #6366F1 !important;
+    border-color: #6366F1 !important;
+  }
+</style>

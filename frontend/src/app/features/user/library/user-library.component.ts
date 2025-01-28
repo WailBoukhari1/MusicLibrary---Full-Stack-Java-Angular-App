@@ -49,229 +49,8 @@ import * as SongActions from '../../../store/song/song.actions';
     MatSnackBarModule,
     MatChipsModule
   ],
-  template: `
-    <div class="container">
-      <div class="filters-section">
-        <form [formGroup]="filterForm" class="filter-form">
-          <mat-form-field appearance="outline">
-            <mat-label>Search</mat-label>
-            <input matInput placeholder="Search albums..." formControlName="search">
-            <mat-icon matSuffix>search</mat-icon>
-          </mat-form-field>
+  templateUrl:"user-library.component.html"
 
-          <mat-form-field appearance="outline">
-            <mat-label>Category</mat-label>
-            <mat-select formControlName="category">
-              <mat-option [value]="''">All</mat-option>
-              <mat-option *ngFor="let cat of categories" [value]="cat.name">
-                {{cat.displayName}}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Genre</mat-label>
-            <mat-select formControlName="genre">
-              <mat-option [value]="''">All</mat-option>
-              <mat-option *ngFor="let gen of genres" [value]="gen.name">
-                {{gen.displayName}}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Year</mat-label>
-            <mat-select formControlName="year">
-              <mat-option [value]="''">All</mat-option>
-              <mat-option *ngFor="let year of years" [value]="year">
-                {{year}}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
-        </form>
-
-        <mat-chip-listbox *ngIf="hasActiveFilters()" class="active-filters">
-          <mat-chip *ngIf="filterForm.get('search')?.value"
-                   (removed)="clearFilter('search')">
-            Search: {{filterForm.get('search')?.value}}
-            <mat-icon matChipRemove>cancel</mat-icon>
-          </mat-chip>
-          <mat-chip *ngIf="filterForm.get('category')?.value"
-                   (removed)="clearFilter('category')">
-            Category: {{getCategoryDisplayName(filterForm.get('category')?.value)}}
-            <mat-icon matChipRemove>cancel</mat-icon>
-          </mat-chip>
-          <mat-chip *ngIf="filterForm.get('genre')?.value"
-                   (removed)="clearFilter('genre')">
-            Genre: {{getGenreDisplayName(filterForm.get('genre')?.value)}}
-            <mat-icon matChipRemove>cancel</mat-icon>
-          </mat-chip>
-          <mat-chip *ngIf="filterForm.get('year')?.value"
-                   (removed)="clearFilter('year')">
-            Year: {{filterForm.get('year')?.value}}
-            <mat-icon matChipRemove>cancel</mat-icon>
-          </mat-chip>
-        </mat-chip-listbox>
-      </div>
-
-      <div class="loading-shade" *ngIf="isLoading">
-        <mat-spinner></mat-spinner>
-      </div>
-
-      <div class="albums-grid" *ngIf="!isLoading">
-        <mat-card *ngFor="let album of (filteredAlbums$ | async)" 
-                  class="album-card" 
-                  (click)="onAlbumClick(album.id)">
-          <img [src]="getImageUrl(album.imageUrl)" alt="Album cover">
-          <mat-card-content>
-            <h3>{{album.title}}</h3>
-            <p>{{album.artist}}</p>
-            <p class="album-info">
-              <span class="category">{{album.category}}</span>
-              <span class="genre">{{album.genre}}</span>
-              <span class="year">{{album.releaseDate | date:'yyyy'}}</span>
-            </p>
-          </mat-card-content>
-          <mat-card-actions>
-            <button mat-button color="primary" 
-                    (click)="viewAlbumDetails(album)">
-              <mat-icon>visibility</mat-icon>
-              View Details
-            </button>
-          </mat-card-actions>
-        </mat-card>
-      </div>
-
-      <div class="no-results" *ngIf="!isLoading && (albums$ | async)?.length === 0">
-        <mat-icon>album</mat-icon>
-        <p>No albums found matching your criteria</p>
-      </div>
-    </div>
-  `,
-  styles: [`
-    .container {
-      padding: 20px;
-    }
-
-    .filters-section {
-      margin-bottom: 20px;
-    }
-
-    .filter-form {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
-
-    .active-filters {
-      margin-top: 10px;
-    }
-
-    .albums-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 20px;
-      padding: 20px;
-    }
-
-    .album-card {
-      max-width: 100%;
-      transition: transform 0.2s;
-
-      &:hover {
-        transform: translateY(-5px);
-      }
-
-      img {
-        height: 200px;
-        object-fit: cover;
-        background-color: #f5f5f5;
-      }
-
-      .songs-count {
-        font-size: 0.9em;
-        color: #666;
-        margin-top: 8px;
-      }
-
-      mat-card-actions {
-        display: flex;
-        justify-content: space-between;
-        padding: 8px 16px;
-
-        button {
-          flex: 1;
-          margin: 0 4px;
-          
-          &[disabled] {
-            opacity: 0.6;
-          }
-        }
-      }
-    }
-
-    .album-info {
-      display: flex;
-      gap: 8px;
-      font-size: 0.9em;
-      color: #666;
-
-      span {
-        background: #f5f5f5;
-        padding: 2px 8px;
-        border-radius: 12px;
-      }
-    }
-
-    .description {
-      margin-top: 8px;
-      font-size: 0.9em;
-      color: #666;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .loading-shade {
-      position: fixed;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      right: 0;
-      background: rgba(0, 0, 0, 0.15);
-      z-index: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .no-results {
-      text-align: center;
-      padding: 40px;
-      color: #666;
-
-      mat-icon {
-        font-size: 48px;
-        width: 48px;
-        height: 48px;
-      }
-    }
-
-    .albums-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 20px;
-      padding: 20px;
-    }
-    mat-card {
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-    mat-card:hover {
-      transform: translateY(-5px);
-    }
-  `]
 })
 export class UserLibraryComponent implements OnInit, OnDestroy {
   // State management
@@ -419,7 +198,8 @@ export class UserLibraryComponent implements OnInit, OnDestroy {
     this.snackBar.open(message, 'Close', {
       duration: 3000,
       horizontalPosition: 'end',
-      verticalPosition: 'top'
+      verticalPosition: 'top',
+      panelClass: ['mat-toolbar', 'mat-primary'] // Dark theme snackbar
     });
   }
 
@@ -499,6 +279,6 @@ export class UserLibraryComponent implements OnInit, OnDestroy {
   }
 
   viewAlbumDetails(album: Album): void {
-    this.router.navigate(['/user/album-details', album.id]);
+    this.router.navigate(['/user/albums', album.id]);
   }
-} 
+}

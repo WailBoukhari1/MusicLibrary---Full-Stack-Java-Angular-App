@@ -1,0 +1,95 @@
+<div class="container mx-auto px-4 py-8 max-w-5xl">
+  <div *ngIf="song$ | async as song" class="bg-white rounded-xl shadow-sm overflow-hidden">
+    <!-- Hero Section -->
+    <div class="relative">
+      <!-- Background Image with Blur -->
+      <div class="absolute inset-0 bg-cover bg-center blur-2xl opacity-20" 
+           [ngStyle]="{'background-image': 'url(' + getImageUrl(song.imageUrl) + ')'}">
+      </div>
+      
+      <!-- Content -->
+      <div class="relative bg-gradient-to-r from-black/5 to-transparent backdrop-blur-sm">
+        <div class="flex flex-col md:flex-row gap-8 p-8">
+          <!-- Song Cover -->
+          <div class="w-48 h-48 md:w-72 md:h-72 flex-shrink-0 group relative">
+            <img [src]="getImageUrl(song.imageUrl)" 
+                 [alt]="song.title"
+                 class="w-full h-full object-cover rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300" />
+            
+            <!-- Play Overlay -->
+            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 
+                        rounded-xl flex items-center justify-center cursor-pointer"
+                 (click)="playSong(song)">
+              <mat-icon class="text-white transform scale-150">play_circle</mat-icon>
+            </div>
+          </div>
+
+          <!-- Song Info -->
+          <div class="flex flex-col justify-end flex-1">
+            <h1 class="text-3xl md:text-5xl font-bold text-gray-900 mb-3">
+              {{ song.title }}
+            </h1>
+            <h2 class="text-xl text-gray-600 mb-8 hover:text-gray-800 cursor-pointer transition-colors">
+              {{ song.artist }}
+            </h2>
+
+            <!-- Meta Info -->
+            <div class="flex flex-wrap gap-6 mb-8 text-sm">
+              <div class="flex items-center gap-2 text-gray-600" *ngIf="song.albumTitle">
+                <mat-icon class="!w-5 !h-5 !text-base">album</mat-icon>
+                <span class="hover:text-gray-900 cursor-pointer transition-colors">{{ song.albumTitle }}</span>
+              </div>
+              <div class="flex items-center gap-2 text-gray-600">
+                <mat-icon class="!w-5 !h-5 !text-base">schedule</mat-icon>
+                <span>3:45</span>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex flex-wrap items-center gap-4">
+              <button mat-flat-button 
+                      color="primary"
+                      class="!px-8 !py-6 !text-lg !rounded-full hover:scale-105 transition-transform"
+                      (click)="playSong(song)">
+                <mat-icon class="mr-2 scale-125">play_arrow</mat-icon>
+                Play
+              </button>
+              
+              <!-- Favorite Button -->
+              <button mat-icon-button 
+                      [color]="isFavorite() ? 'warn' : ''"
+                      class="!w-14 !h-14 border-2 transition-all duration-300"
+                      [class.border-gray-200]="!isFavorite()"
+                      [class.border-red-200]="isFavorite()"
+                      [class.hover:border-red-300]="!isFavorite()"
+                      [class.hover:border-red-400]="isFavorite()"
+                      (click)="toggleFavorite(song)"
+                      [matTooltip]="isFavorite() ? 'Remove from Favorites' : 'Add to Favorites'">
+                <mat-icon [class.scale-125]="true"
+                         [class.text-gray-400]="!isFavorite()"
+                         class="transition-transform duration-300 hover:scale-150">
+                  {{ isFavorite() ? 'favorite' : 'favorite_border' }}
+                </mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Description Section -->
+    <div class="px-8 py-6 border-t border-gray-100" *ngIf="song.description">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">About</h3>
+      <p class="text-gray-600 leading-relaxed max-w-3xl">
+        {{ song.description }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <mat-progress-bar
+    *ngIf="loading$ | async"
+    mode="indeterminate"
+    class="fixed top-0 left-0 right-0 z-50">
+  </mat-progress-bar>
+</div>

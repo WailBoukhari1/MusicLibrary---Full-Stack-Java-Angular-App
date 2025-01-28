@@ -10,6 +10,7 @@ import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { AuthActions } from '../../../store/auth/auth.actions';
 import { selectAuthError, selectAuthLoading } from '../../../store/auth/auth.selectors';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-register',
@@ -22,108 +23,16 @@ import { selectAuthError, selectAuthLoading } from '../../../store/auth/auth.sel
     MatButtonModule,
     MatCardModule,
     MatProgressSpinnerModule,
-    RouterLink
+    RouterLink,
+    MatIconModule
   ],
-  template: `
-    <div class="auth-container">
-      <mat-card>
-        <mat-card-header>
-          <mat-card-title>Register</mat-card-title>
-        </mat-card-header>
-
-        <mat-card-content>
-          <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
-            <mat-form-field appearance="outline">
-              <mat-label>Username</mat-label>
-              <input matInput formControlName="username" required>
-              <mat-error *ngIf="registerForm.get('username')?.hasError('required')">
-                Username is required
-              </mat-error>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Email</mat-label>
-              <input matInput type="email" formControlName="email" required>
-              <mat-error *ngIf="registerForm.get('email')?.hasError('required')">
-                Email is required
-              </mat-error>
-              <mat-error *ngIf="registerForm.get('email')?.hasError('email')">
-                Please enter a valid email
-              </mat-error>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Password</mat-label>
-              <input matInput type="password" formControlName="password" required>
-              <mat-error *ngIf="registerForm.get('password')?.hasError('required')">
-                Password is required
-              </mat-error>
-              <mat-error *ngIf="registerForm.get('password')?.hasError('minlength')">
-                Password must be at least 6 characters
-              </mat-error>
-            </mat-form-field>
-
-            <div class="error-message" *ngIf="error$ | async as error">
-              {{ error }}
-            </div>
-
-            <button mat-raised-button color="primary" type="submit" 
-                    [disabled]="registerForm.invalid || (loading$ | async)">
-              <mat-spinner diameter="20" *ngIf="loading$ | async"></mat-spinner>
-              <span>Register</span>
-            </button>
-          </form>
-        </mat-card-content>
-
-        <mat-card-actions>
-          <a mat-button routerLink="/auth/login">Already have an account? Login</a>
-        </mat-card-actions>
-      </mat-card>
-    </div>
-  `,
-  styles: [`
-    .auth-container {
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: #f5f5f5;
-    }
-    mat-card {
-      width: 100%;
-      max-width: 400px;
-      padding: 2rem;
-    }
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    mat-form-field {
-      width: 100%;
-    }
-    .error-message {
-      color: red;
-      text-align: center;
-      margin: 1rem 0;
-    }
-    button {
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    mat-card-actions {
-      display: flex;
-      justify-content: center;
-    }
-  `]
+  templateUrl:"register.component.html"
 })
 export class RegisterComponent {
   registerForm: FormGroup;
   loading$ = this.store.select(selectAuthLoading);
   error$ = this.store.select(selectAuthError);
+  hidePassword = true;
 
   constructor(
     private fb: FormBuilder,

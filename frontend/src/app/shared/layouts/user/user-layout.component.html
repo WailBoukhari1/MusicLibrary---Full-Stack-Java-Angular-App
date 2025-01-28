@@ -1,0 +1,125 @@
+<!-- Main Navigation -->
+<mat-toolbar class="relative bg-primary-600 text-white shadow-lg z-50 overflow-hidden">
+  <!-- Background Pattern -->
+  <div class="absolute inset-0 opacity-10">
+    <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNnptMCAyYTQgNCAwIDEwMCA4IDQgNCAwIDAwMC04eiIgZmlsbD0iY3VycmVudENvbG9yIi8+PC9nPjwvc3ZnPg==')]"></div>
+  </div>
+  
+  <!-- Gradient Overlay -->
+  <div class="absolute inset-0 bg-gradient-to-r from-primary-600 to-primary-700"></div>
+
+  <!-- Main Content -->
+  <div class="container mx-auto px-4 flex items-center justify-between h-full relative">
+    <!-- Logo/Brand -->
+    <a mat-button routerLink="/user/library" 
+      class="!text-white flex items-center gap-2 hover:bg-white/10 transition-colors">
+      <mat-icon class="text-primary-200">music_note</mat-icon>
+      <span class="text-lg font-semibold tracking-wide">Music App</span>
+    </a>
+
+    <!-- Desktop Navigation -->
+    <nav class="hidden md:flex items-center gap-1">
+      <a mat-button routerLink="/user/library" 
+        routerLinkActive="bg-white/20" 
+        class="!text-white flex items-center gap-2 hover:bg-white/10 transition-colors rounded-lg">
+        <mat-icon class="text-primary-200">library_music</mat-icon>
+        <span>Library</span>
+      </a>
+      <a mat-button routerLink="/user/favorites" 
+        routerLinkActive="bg-white/20"
+        class="!text-white flex items-center gap-2 hover:bg-white/10 transition-colors rounded-lg">
+        <mat-icon class="text-primary-200">favorite</mat-icon>
+        <span>Favorites</span>
+      </a>
+      <ng-container *ngIf="isAdmin$ | async">
+        <a mat-button routerLink="/admin" 
+          routerLinkActive="bg-white/20"
+          class="!text-white flex items-center gap-2 hover:bg-white/10 transition-colors rounded-lg">
+          <mat-icon class="text-primary-200">admin_panel_settings</mat-icon>
+          <span>Admin</span>
+        </a>
+      </ng-container>
+      <mat-menu #userMenu="matMenu" 
+        class="mt-2"
+        xPosition="before">
+        <div class="px-4 py-2 border-b border-gray-100" *ngIf="currentUser$ | async as user">
+          <p class="text-sm font-medium text-gray-900">{{ user.username }}</p>
+        </div>
+        <button mat-menu-item (click)="logout()" 
+          class="flex items-center gap-2 mt-1">
+          <mat-icon class="text-gray-600">logout</mat-icon>
+          <span class="text-gray-700">Logout</span>
+        </button>
+      </mat-menu>
+    </nav>
+
+    <!-- Mobile Menu Button -->
+    <button mat-icon-button 
+      class="md:hidden !text-white hover:bg-white/10 transition-colors" 
+      [matMenuTriggerFor]="mobileMenu">
+      <mat-icon>menu</mat-icon>
+    </button>
+
+    <!-- Mobile Menu -->
+    <mat-menu #mobileMenu="matMenu" 
+      class="min-w-[250px]"
+      xPosition="before">
+      <div class="px-4 py-2 border-b border-gray-100" *ngIf="currentUser$ | async as user">
+        <p class="text-sm font-medium text-gray-900">{{ user.username }}</p>
+      </div>
+      <div class="py-2">
+        <a mat-menu-item routerLink="/user/library"
+          class="flex items-center gap-2">
+          <mat-icon class="text-primary-600">library_music</mat-icon>
+          <span class="text-gray-700">Library</span>
+        </a>
+        <a mat-menu-item routerLink="/user/favorites"
+          class="flex items-center gap-2">
+          <mat-icon class="text-primary-600">favorite</mat-icon>
+          <span class="text-gray-700">Favorites</span>
+        </a>
+        <ng-container *ngIf="isAdmin$ | async">
+          <a mat-menu-item routerLink="/admin"
+            class="flex items-center gap-2">
+            <mat-icon class="text-primary-600">admin_panel_settings</mat-icon>
+            <span class="text-gray-700">Admin</span>
+          </a>
+        </ng-container>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="py-2">
+        <button mat-menu-item (click)="logout()"
+          class="flex items-center gap-2">
+          <mat-icon class="text-gray-600">logout</mat-icon>
+          <span class="text-gray-700">Logout</span>
+        </button>
+      </div>
+    </mat-menu>
+  </div>
+</mat-toolbar>
+
+<!-- Main Content -->
+<div class="min-h-[calc(100vh-64px-64px)] bg-gradient-to-b from-gray-50 to-white">
+  <main class="container mx-auto px-4 py-6">
+    <router-outlet></router-outlet>
+  </main>
+</div>
+
+<!-- Footer -->
+<footer class="bg-white border-t border-gray-200">
+  <div class="container mx-auto px-4 py-6">
+    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-2">
+        <mat-icon class="text-primary-600">music_note</mat-icon>
+        <p class="text-gray-600 text-sm">
+          &copy; 2025 Music App. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Player -->
+<div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg backdrop-blur-lg bg-white/90">
+  <app-player></app-player>
+</div>

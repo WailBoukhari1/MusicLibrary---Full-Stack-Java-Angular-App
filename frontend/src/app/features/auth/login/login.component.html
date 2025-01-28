@@ -1,0 +1,94 @@
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full space-y-8">
+    <!-- Header -->
+    <div class="text-center">
+      <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+        Welcome back
+      </h2>
+      <p class="mt-2 text-sm text-gray-600">
+        Sign in to your account
+      </p>
+    </div>
+
+    <!-- Login Form Card -->
+    <div class="bg-white rounded-xl shadow-sm p-8">
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
+        <!-- Username Field -->
+        <mat-form-field class="w-full">
+          <mat-label>Username</mat-label>
+          <input matInput 
+                 formControlName="username" 
+                 required
+                 placeholder="Enter your username"
+                 class="!text-base" />
+          <mat-icon matPrefix class="mr-2 text-gray-400">person_outline</mat-icon>
+          <mat-error *ngIf="loginForm.get('username')?.hasError('required')">
+            Username is required
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Password Field -->
+        <mat-form-field class="w-full">
+          <mat-label>Password</mat-label>
+          <input matInput 
+                 [type]="hidePassword ? 'password' : 'text'"
+                 formControlName="password" 
+                 required
+                 placeholder="Enter your password"
+                 class="!text-base" />
+          <mat-icon matPrefix class="mr-2 text-gray-400">lock_outline</mat-icon>
+          <button mat-icon-button 
+                  matSuffix 
+                  type="button"
+                  (click)="hidePassword = !hidePassword">
+            <mat-icon class="text-gray-400">
+              {{hidePassword ? 'visibility_off' : 'visibility'}}
+            </mat-icon>
+          </button>
+          <mat-error *ngIf="loginForm.get('password')?.hasError('required')">
+            Password is required
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Error Message -->
+        <div *ngIf="error$ | async as error" 
+             class="p-4 rounded-lg bg-red-50 text-red-600 text-sm">
+          {{ error }}
+        </div>
+
+        <!-- Submit Button -->
+        <button mat-flat-button
+                color="primary"
+                type="submit"
+                class="w-full !py-6 !text-lg relative"
+                [disabled]="loginForm.invalid || (loading$ | async)">
+          <div class="flex items-center justify-center gap-2">
+            <mat-spinner diameter="24" 
+                        *ngIf="loading$ | async"
+                        class="!absolute left-4">
+            </mat-spinner>
+            <span>Sign in</span>
+          </div>
+        </button>
+
+        <!-- Register Link -->
+        <div class="text-center mt-6">
+          <a routerLink="/auth/register" 
+             class="text-primary-600 hover:text-primary-700 text-sm font-medium">
+            Don't have an account? Register here
+          </a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center text-sm text-gray-500">
+      <p>By signing in, you agree to our</p>
+      <div class="space-x-2">
+        <a href="#" class="text-primary-600 hover:text-primary-700">Terms of Service</a>
+        <span>&middot;</span>
+        <a href="#" class="text-primary-600 hover:text-primary-700">Privacy Policy</a>
+      </div>
+    </div>
+  </div>
+</div>

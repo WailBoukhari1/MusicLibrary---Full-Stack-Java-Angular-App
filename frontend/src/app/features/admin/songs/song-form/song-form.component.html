@@ -1,0 +1,216 @@
+<div class="min-h-screen bg-gray-50/30 py-8 px-4">
+  <div class="container mx-auto max-w-3xl">
+    <!-- Header -->
+    <div class="flex items-center gap-3 mb-6">
+      <button mat-icon-button 
+              (click)="onCancel()"
+              class="!bg-white !shadow-sm hover:!bg-gray-50"
+              matTooltip="Go back">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">{{ isEditMode ? 'Edit' : 'Create' }} Song</h1>
+        <p class="text-gray-500 text-sm">{{ isEditMode ? 'Update song details' : 'Add a new song to your collection' }}</p>
+      </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-white rounded-2xl shadow-sm p-8">
+      <form [formGroup]="songForm" (ngSubmit)="onSubmit()" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Left Column -->
+          <div class="space-y-6">
+            <!-- Title Field -->
+            <mat-form-field class="w-full">
+              <mat-label>Song Title</mat-label>
+              <input matInput formControlName="title" required placeholder="Enter song title">
+              <mat-icon matPrefix class="mr-2 text-gray-400">music_note</mat-icon>
+              <mat-error *ngIf="songForm.get('title')?.errors?.['required']">
+                Title is required
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Artist Field -->
+            <mat-form-field class="w-full">
+              <mat-label>Artist</mat-label>
+              <input matInput formControlName="artist" required placeholder="Enter artist name">
+              <mat-icon matPrefix class="mr-2 text-gray-400">person</mat-icon>
+              <mat-error *ngIf="songForm.get('artist')?.errors?.['required']">
+                Artist is required
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Album Field -->
+            <mat-form-field class="w-full">
+              <mat-label>Album</mat-label>
+              <mat-select formControlName="albumId">
+                <mat-option [value]="null">
+                  <span class="text-gray-500">No Album</span>
+                </mat-option>
+                <mat-option *ngFor="let album of albums$ | async" [value]="album.id">
+                  <div class="flex items-center gap-2">
+                    <img [src]="getImageUrl(album.imageUrl)" 
+                         [alt]="album.title"
+                         class="w-6 h-6 rounded object-cover">
+                    <span>{{ album.title }}</span>
+                  </div>
+                </mat-option>
+              </mat-select>
+              <mat-icon matPrefix class="mr-2 text-gray-400">album</mat-icon>
+            </mat-form-field>
+
+            <!-- Selected Album Preview -->
+            <div *ngIf="selectedAlbum" class="bg-gray-50 rounded-lg p-4 mt-2">
+              <div class="flex items-start gap-4">
+                <img [src]="getImageUrl(selectedAlbum.imageUrl)" 
+                     [alt]="selectedAlbum.title"
+                     class="w-16 h-16 rounded-lg object-cover">
+                <div>
+                  <h4 class="font-medium text-gray-900">{{ selectedAlbum.title }}</h4>
+                  <p class="text-sm text-gray-500">{{ selectedAlbum.artist }}</p>
+                  <div class="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                    <mat-icon class="!w-4 !h-4 !text-base">calendar_today</mat-icon>
+                    <span>{{ selectedAlbum.releaseDate | date:'mediumDate' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column -->
+          <div class="space-y-6">
+            <!-- Track Number Field -->
+            <mat-form-field class="w-full">
+              <mat-label>Track Number</mat-label>
+              <input matInput type="number" formControlName="trackNumber" min="1">
+              <mat-icon matPrefix class="mr-2 text-gray-400">format_list_numbered</mat-icon>
+            </mat-form-field>
+
+            <!-- Description Field -->
+            <mat-form-field class="w-full">
+              <mat-label>Description</mat-label>
+              <textarea matInput formControlName="description" rows="4" 
+                        placeholder="Enter song description"></textarea>
+              <mat-icon matPrefix class="mr-2 text-gray-400">description</mat-icon>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Files Section -->
+        <div class="border-t border-b border-gray-100 py-6 space-y-6">
+          <!-- Audio File Section -->
+          <div class="flex items-start gap-6">
+            <div class="w-12 h-12 rounded-lg bg-primary-50 flex items-center justify-center">
+              <mat-icon class="text-primary-600">audiotrack</mat-icon>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-sm font-medium text-gray-900 mb-1">Audio File</h3>
+              <p class="text-sm text-gray-500 mb-4">Upload the song audio file</p>
+              
+              <input #audioFileInput type="file" (change)="onAudioFileSelected($event)" 
+                     accept="audio/*" class="hidden">
+              
+              <div class="flex flex-col gap-3">
+                <div class="flex items-center gap-3">
+                  <button type="button" 
+                          mat-flat-button 
+                          color="primary"
+                          (click)="audioFileInput.click()"
+                          class="!rounded-lg">
+                    <mat-icon class="mr-2">upload</mat-icon>
+                    {{ isEditMode ? 'Change' : 'Upload' }} Audio
+                  </button>
+                  <span *ngIf="selectedAudioFile" class="text-sm text-gray-500">
+                    {{ selectedAudioFile.name }}
+                  </span>
+                </div>
+                
+                <!-- Audio Preview -->
+                <div *ngIf="audioPreviewUrl" class="bg-gray-50 rounded-lg p-4">
+                  <audio controls [src]="audioPreviewUrl" class="w-full">
+                    Your browser does not support the audio element.
+                  </audio>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cover Image Section -->
+          <div class="flex items-start gap-6">
+            <!-- Image Preview -->
+            <div class="relative w-32 h-32 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-200">
+              <img *ngIf="imagePreviewUrl" [src]="imagePreviewUrl" alt="Cover preview" 
+                   class="w-full h-full object-cover">
+              <mat-icon *ngIf="!imagePreviewUrl" class="text-gray-400 transform scale-150">image</mat-icon>
+            </div>
+
+            <!-- Upload Controls -->
+            <div class="flex-1">
+              <h3 class="text-sm font-medium text-gray-900 mb-1">Cover Image</h3>
+              <p class="text-sm text-gray-500 mb-4">Upload a cover image for your song</p>
+              
+              <input #imageFileInput type="file" (change)="onImageFileSelected($event)" 
+                     accept="image/*" class="hidden">
+              
+              <div class="flex items-center gap-3">
+                <button type="button" 
+                        mat-flat-button 
+                        color="primary"
+                        (click)="imageFileInput.click()"
+                        class="!rounded-lg">
+                  <mat-icon class="mr-2">upload</mat-icon>
+                  {{ isEditMode ? 'Change' : 'Upload' }} Cover
+                </button>
+                <span *ngIf="selectedImageFile" class="text-sm text-gray-500">
+                  {{ selectedImageFile.name }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="flex items-center justify-end gap-3 pt-4">
+          <button mat-stroked-button 
+                  type="button" 
+                  (click)="onCancel()"
+                  class="!px-6 !py-2.5 !rounded-lg !border-gray-200">
+            Cancel
+          </button>
+          <button mat-flat-button 
+                  color="primary" 
+                  type="submit"
+                  [disabled]="songForm.invalid || (loading$ | async)"
+                  class="!px-6 !py-2.5 !rounded-lg">
+            <span class="flex items-center gap-2">
+              <mat-icon>{{ isEditMode ? 'save' : 'add' }}</mat-icon>
+              {{ isEditMode ? 'Update' : 'Create' }} Song
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+  ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+    display: none !important;
+  }
+
+  ::ng-deep .mat-mdc-text-field-wrapper {
+    background-color: white !important;
+  }
+
+  ::ng-deep .mat-mdc-form-field-icon-prefix {
+    padding-right: 8px !important;
+  }
+
+  ::ng-deep audio {
+    height: 36px;
+  }
+
+  ::ng-deep audio::-webkit-media-controls-panel {
+    background-color: white;
+  }
+</style>

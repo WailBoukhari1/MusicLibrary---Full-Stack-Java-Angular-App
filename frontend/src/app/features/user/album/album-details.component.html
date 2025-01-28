@@ -1,0 +1,124 @@
+<div class="container mx-auto px-4 py-8">
+  <ng-container *ngIf="album$ | async as album">
+    <!-- Album Header Section -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-8">
+      <div class="relative">
+        <!-- Background Image with Blur -->
+        <div class="absolute inset-0 bg-cover bg-center blur-xl opacity-30" 
+             [ngStyle]="{'background-image': 'url(' + getImageUrl(album.imageUrl) + ')'}">
+        </div>
+        
+        <!-- Content -->
+        <div class="relative bg-gradient-to-r from-black/10 to-transparent backdrop-blur-sm">
+          <div class="flex flex-col md:flex-row gap-8 p-8">
+            <!-- Album Cover -->
+            <div class="w-48 h-48 md:w-64 md:h-64 flex-shrink-0">
+              <img [src]="getImageUrl(album.imageUrl)"
+                   [alt]="album.title"
+                   class="w-full h-full object-cover rounded-lg shadow-lg"
+                   (error)="onImageError($event)" />
+            </div>
+
+            <!-- Album Info -->
+            <div class="flex flex-col justify-end">
+              <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+                {{ album.title }}
+              </h1>
+              <h2 class="text-xl text-gray-600 mb-6">{{ album.artist }}</h2>
+
+              <!-- Meta Info -->
+              <div class="flex flex-wrap gap-4 mb-6 text-sm">
+                <div class="flex items-center gap-1 text-gray-600">
+                  <mat-icon class="!w-5 !h-5 !text-base">album</mat-icon>
+                  <span>{{ album.category }}</span>
+                </div>
+                <div class="flex items-center gap-1 text-gray-600">
+                  <mat-icon class="!w-5 !h-5 !text-base">music_note</mat-icon>
+                  <span>{{ album.genre }}</span>
+                </div>
+                <div class="flex items-center gap-1 text-gray-600">
+                  <mat-icon class="!w-5 !h-5 !text-base">calendar_today</mat-icon>
+                  <span>{{ album.releaseDate | date:'yyyy' }}</span>
+                </div>
+                <div class="flex items-center gap-1 text-gray-600">
+                  <mat-icon class="!w-5 !h-5 !text-base">queue_music</mat-icon>
+                  <span>{{ album.songs.length || 0 }} songs</span>
+                </div>
+              </div>
+
+              <!-- Play Button -->
+              <button mat-flat-button color="primary"
+                      class="w-fit !px-8 !py-2"
+                      [disabled]="!album.songs.length"
+                      (click)="playAlbum(album)">
+                <mat-icon class="mr-2">
+                  {{ isCurrentAlbum(album) && (isPlaying$ | async) ? 'pause' : 'play_arrow' }}
+                </mat-icon>
+                {{ isCurrentAlbum(album) && (isPlaying$ | async) ? 'Pause' : 'Play Album' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Songs List -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div class="p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Songs</h2>
+        
+        <!-- Songs Table -->
+        <div class="divide-y divide-gray-100">
+          <div *ngFor="let song of album.songs; let i = index" 
+               class="group py-3 hover:bg-gray-50 transition-colors rounded-lg"
+               [ngClass]="{'bg-primary-50/50': isCurrentSong(song)}">
+            
+            <div class="flex items-center px-4">
+              <!-- Track Number -->
+              <span class="w-8 text-sm text-gray-400">
+                {{ (i + 1).toString().padStart(2, "0") }}
+              </span>
+
+              <!-- Song Thumbnail -->
+              <div class="w-12 h-12 rounded overflow-hidden mr-4">
+                <img [src]="getImageUrl(song.imageUrl)"
+                     class="w-full h-full object-cover"
+                     (error)="onImageError($event)" />
+              </div>
+
+              <!-- Song Info -->
+              <div class="flex-1 min-w-0">
+                <div class="text-gray-900 font-medium truncate">{{ song.title }}</div>
+                <div class="text-sm text-gray-500 truncate">{{ song.artist }}</div>
+              </div>
+
+              <!-- Duration -->
+              <div class="text-sm text-gray-500 mx-4">
+                {{ formatDuration(song.duration) }}
+              </div>
+
+              <!-- Actions -->
+              <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button mat-icon-button (click)="playSong(song)">
+                  <mat-icon class="text-gray-600">
+                    {{ isCurrentSong(song) && (isPlaying$ | async) ? 'pause' : 'play_arrow' }}
+                  </mat-icon>
+                </button>
+                <button mat-icon-button [routerLink]="['/user/song-details', song.id]">
+                  <mat-icon class="text-gray-600">info</mat-icon>
+                </button>
+                <button mat-icon-button 
+                        [color]="isFavorite(song) ? 'warn' : ''"
+                        (click)="toggleFavorite(song); $event.stopPropagation()">
+                  <mat-icon>
+                    {{ isFavorite(song) ? 'favorite' : 'favorite_border' }}
+                  </mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>

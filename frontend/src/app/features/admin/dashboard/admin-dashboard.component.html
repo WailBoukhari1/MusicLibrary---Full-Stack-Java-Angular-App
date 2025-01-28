@@ -1,0 +1,82 @@
+<div class="container mx-auto px-4 py-8">
+  <!-- Header -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+    <p class="mt-2 text-gray-600">Manage your music platform's content and users</p>
+  </div>
+
+  <!-- Dashboard Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Albums Card -->
+    <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300">
+      <div class="p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-12 h-12 rounded-lg bg-primary-50 flex items-center justify-center">
+            <mat-icon class="text-primary-600 scale-125">album</mat-icon>
+          </div>
+          <h2 class="text-xl font-semibold text-gray-900">Albums Management</h2>
+        </div>
+        <p class="text-gray-600 mb-6">
+          Manage your music albums catalog, add new releases, and organize your collection.
+        </p>
+        <button mat-flat-button 
+                color="primary"
+                routerLink="/admin/albums"
+                class="w-full !py-3 !rounded-lg">
+          <span class="flex items-center justify-center gap-2">
+            <span>Manage Albums</span>
+            <mat-icon>arrow_forward</mat-icon>
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Songs Card -->
+    <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300">
+      <div class="p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-12 h-12 rounded-lg bg-primary-50 flex items-center justify-center">
+            <mat-icon class="text-primary-600 scale-125">music_note</mat-icon>
+          </div>
+          <h2 class="text-xl font-semibold text-gray-900">Songs Management</h2>
+        </div>
+        <p class="text-gray-600 mb-6">
+          Organize your songs collection, update metadata, and manage audio files.
+        </p>
+        <button mat-flat-button 
+                color="primary"
+                routerLink="/admin/songs"
+                class="w-full !py-3 !rounded-lg">
+          <span class="flex items-center justify-center gap-2">
+            <span>Manage Songs</span>
+            <mat-icon>arrow_forward</mat-icon>
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Users Card -->
+    <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300">
+      <div class="p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-12 h-12 rounded-lg bg-primary-50 flex items-center justify-center">
+            <mat-icon class="text-primary-600 scale-125">people</mat-icon>
+          </div>
+          <h2 class="text-xl font-semibold text-gray-900">Users Management</h2>
+        </div>
+        <p class="text-gray-600 mb-6">
+          Manage user accounts, roles, permissions, and monitor user activity.
+        </p>
+        <button mat-flat-button 
+                color="primary"
+                routerLink="/admin/users"
+                class="w-full !py-3 !rounded-lg">
+          <span class="flex items-center justify-center gap-2">
+            <span>Manage Users</span>
+            <mat-icon>arrow_forward</mat-icon>
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

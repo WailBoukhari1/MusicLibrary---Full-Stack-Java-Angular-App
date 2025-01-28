@@ -1,0 +1,105 @@
+<div class="container mx-auto px-4 py-8">
+  <ng-container *ngIf="favoriteSongs$ | async as favoriteSongs">
+    <!-- Favorites Header Section -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-8">
+      <div class="relative">
+        <!-- Background Gradient -->
+        <div class="relative bg-gradient-to-r from-black/10 to-transparent backdrop-blur-sm">
+          <div class="flex flex-col md:flex-row gap-8 p-8">
+            <!-- Favorites Icon -->
+            <div class="w-48 h-48 md:w-64 md:h-64 flex-shrink-0 bg-gray-50 rounded-lg shadow-lg flex items-center justify-center">
+              <mat-icon class="text-8xl text-primary">favorite</mat-icon>
+            </div>
+
+            <!-- Favorites Info -->
+            <div class="flex flex-col justify-end">
+              <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+                Your Favorites
+              </h1>
+              <h2 class="text-xl text-gray-600 mb-6">Songs you've marked as favorites</h2>
+
+              <!-- Meta Info -->
+              <div class="flex flex-wrap gap-4 mb-6 text-sm">
+                <div class="flex items-center gap-1 text-gray-600">
+                  <mat-icon class="!w-5 !h-5 !text-base">queue_music</mat-icon>
+                  <span>{{ favoriteSongs.length || 0 }} songs</span>
+                </div>
+              </div>
+
+              <!-- Play Button -->
+              <button mat-flat-button 
+                      color="primary"
+                      class="w-fit !px-8 !py-2"
+                      [disabled]="!favoriteSongs.length"
+                      (click)="playAllFavorites()">
+                <mat-icon class="mr-2">play_arrow</mat-icon>
+                Play All
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Songs List -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div class="p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Songs</h2>
+        
+        <!-- Songs Table -->
+        <div class="divide-y divide-gray-100">
+          <div *ngFor="let song of favoriteSongs; let i = index" 
+               class="group py-3 hover:bg-gray-50 transition-colors rounded-lg"
+               [ngClass]="{'bg-primary-50/50': isCurrentSong(song)}">
+            
+            <div class="flex items-center px-4">
+              <!-- Track Number -->
+              <span class="w-8 text-sm text-gray-400">
+                {{ (i + 1).toString().padStart(2, "0") }}
+              </span>
+
+              <!-- Song Thumbnail -->
+              <div class="w-12 h-12 rounded overflow-hidden mr-4">
+                <img [src]="getImageUrl(song.imageUrl)"
+                     class="w-full h-full object-cover"
+                     (error)="onImageError($event)" />
+              </div>
+
+              <!-- Song Info -->
+              <div class="flex-1 min-w-0">
+                <div class="text-gray-900 font-medium truncate">{{ song.title }}</div>
+                <div class="text-sm text-gray-500 truncate">
+                  <span>{{ song.artist }}</span>
+                  <span class="mx-2">•</span>
+                  <span>{{ song.albumTitle }}</span>
+                </div>
+              </div>
+
+              <!-- Duration -->
+              <div class="text-sm text-gray-500 mx-4">
+                {{ formatDuration(song.duration) }}
+              </div>
+
+              <!-- Actions -->
+              <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button mat-icon-button (click)="playSong(song)">
+                  <mat-icon class="text-gray-600">
+                    {{ isCurrentSong(song) && (isPlaying$ | async) ? 'pause' : 'play_arrow' }}
+                  </mat-icon>
+                </button>
+                <button mat-icon-button [routerLink]="['/user/song-details', song.id]">
+                  <mat-icon class="text-gray-600">info</mat-icon>
+                </button>
+                <button mat-icon-button 
+                        color="warn"
+                        (click)="toggleFavorite(song)">
+                  <mat-icon>favorite</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>
