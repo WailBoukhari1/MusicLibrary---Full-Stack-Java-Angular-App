@@ -1,29 +1,44 @@
 import { Routes } from '@angular/router';
-import { UserLibraryComponent } from './library/user-library.component';
-import { AlbumDetailsComponent } from './album/album-details.component';
-import { UserFavoritesComponent } from './favorites/user-favorites.component';
-import { SongDetailsComponent } from './song/song-details.component';
 
 export const USER_ROUTES: Routes = [
   {
     path: '',
-    redirectTo: 'library',
-    pathMatch: 'full'
-  },
-  {
-    path: 'library',
-    component: UserLibraryComponent
-  },
-  {
-    path: 'albums/:id',
-    component: AlbumDetailsComponent
-  },
-  {
-    path: 'favorites',
-    component: UserFavoritesComponent
-  },
-  {
-    path: 'song-details/:id',
-    component: SongDetailsComponent
+    children: [
+      {
+        path: '',
+        redirectTo: 'home',
+        pathMatch: 'full'
+      },
+      {
+        path: 'home',
+        loadComponent: () => import('./home/home.component')
+          .then(m => m.HomeComponent),
+        title: 'Home'
+      },
+      {
+        path: 'library',
+        loadComponent: () => import('./library/user-library.component')
+          .then(m => m.UserLibraryComponent),
+        title: 'My Library'
+      },
+      {
+        path: 'favorites',
+        loadComponent: () => import('./favorites/user-favorites.component')
+          .then(m => m.UserFavoritesComponent),
+        title: 'My Favorites'
+      },
+      {
+        path: 'albums/:id',
+        loadComponent: () => import('./album/album-details.component')
+          .then(m => m.AlbumDetailsComponent),
+        title: 'Album Details'
+      },
+      {
+        path: 'song-details/:id',
+        loadComponent: () => import('./song/song-details.component')
+          .then(m => m.SongDetailsComponent),
+        title: 'Song Details'
+      }
+    ]
   }
 ]; 

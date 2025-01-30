@@ -7,11 +7,12 @@ import { of } from 'rxjs';
 import { Router } from '@angular/router';
 import { AuthResponse, UserResponse } from '../../core/models/auth.model';
 import { User } from '../../core/models/user.model';
+import { AlertService } from '../../core/services/alert.service';
 
 @Injectable()
 export class AuthEffects {
-  login$ = createEffect(() =>
-    this.actions$.pipe(
+  login$ = createEffect(() => {
+    return this.actions$.pipe(
       ofType(AuthActions.login),
       mergeMap(({ username, password }) =>
         this.authService.login({ username, password }).pipe(
@@ -19,17 +20,17 @@ export class AuthEffects {
             if (!response.success || !response.data) {
               throw new Error(response.error || 'Invalid response data');
             }
-            
-            // Create user object from response data
+
             const user: User = {
-              id: response.data.username, // Using username as id since it's unique
+              id: response.data.username,
               username: response.data.username,
-              email: '', // Will be populated by getCurrentUser if needed
+              email: '',
               roles: response.data.roles,
               active: true,
               createdAt: new Date()
             };
 
+            this.alertService.success('Login successful!');
             return AuthActions.loginSuccess({ 
               user,
               token: response.data.token 
@@ -40,20 +41,22 @@ export class AuthEffects {
           })))
         )
       )
-    )
-  );
+    );
+  });
 
-  loginSuccess$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(AuthActions.loginSuccess),
-      tap(({ token, user }) => {
-        localStorage.setItem('token', token);
-        if (this.router.url.includes('/auth')) {
-          const route = user.roles.includes('ADMIN') ? '/admin/dashboard' : '/user/library';
-          this.router.navigate([route]);
-        }
-      })
-    ),
+  loginSuccess$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(AuthActions.loginSuccess),
+        tap(({ token, user }) => {
+          localStorage.setItem('token', token);
+          // Don't navigate if we're initializing the app
+          if (this.router.url.includes('/auth')) {
+            const route = user.roles.includes('ADMIN') ? '/admin/dashboard' : '/user/home';
+            this.router.navigate([route]);
+          }
+        })
+      ),
     { dispatch: false }
   );
 
@@ -114,16 +117,17 @@ export class AuthEffects {
         if (token) {
           return this.authService.getCurrentUser().pipe(
             map(response => {
-              if (!response.data) {
+              if (!response.success || !response.data) {
                 throw new Error('Invalid user data');
               }
               return AuthActions.loginSuccess({ 
                 user: response.data,
-                token: token 
+                token 
               });
             }),
             catchError(() => {
               localStorage.removeItem('token');
+              this.router.navigate(['/auth/login']);
               return of(AuthActions.logout());
             })
           );
@@ -136,6 +140,7 @@ export class AuthEffects {
   constructor(
     private actions$: Actions,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private alertService: AlertService
   ) {}
 } 

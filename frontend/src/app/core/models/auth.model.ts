@@ -13,9 +13,8 @@ export interface RegisterRequest {
 }
 
 export interface AuthData {
-  token: string;
-  refreshToken: string;
   username: string;
+  token: string;
   roles: string[];
 }
 
@@ -29,6 +28,10 @@ export interface RefreshTokenRequest {
   refreshToken: string;
 }
 
-export type AuthResponse = ApiResponse<AuthData>;
+export interface AuthResponse {
+  success: boolean;
+  data?: AuthData;
+  error?: string;
+}
 
 export { ApiResponse }; 

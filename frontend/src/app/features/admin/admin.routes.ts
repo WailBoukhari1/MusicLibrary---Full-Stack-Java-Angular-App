@@ -25,5 +25,5 @@ export const ADMIN_ROUTES: Routes = [
     path: 'songs',
     loadChildren: () => import('./songs/admin-songs.routes')
       .then(m => m.ADMIN_SONGS_ROUTES)
-  }
+  },
 ]; 

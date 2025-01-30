@@ -11,6 +11,7 @@ import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { AuthActions } from '../../../store/auth/auth.actions';
 import { selectAuthError, selectAuthLoading } from '../../../store/auth/auth.selectors';
+import { AlertService } from '../../../core/services/alert.service';
 
 @Component({
   selector: 'app-login',
@@ -26,7 +27,7 @@ import { selectAuthError, selectAuthLoading } from '../../../store/auth/auth.sel
     MatIconModule,
     RouterLink
   ],
-  templateUrl:"login.component.html"
+  templateUrl: "login.component.html"
 })
 export class LoginComponent {
   loginForm: FormGroup;
@@ -36,7 +37,8 @@ export class LoginComponent {
 
   constructor(
     private fb: FormBuilder,
-    private store: Store
+    private store: Store,
+    private alertService: AlertService
   ) {
     this.loginForm = this.fb.group({
       username: ['', Validators.required],
@@ -47,10 +49,7 @@ export class LoginComponent {
   onSubmit(): void {
     if (this.loginForm.valid) {
       const { username, password } = this.loginForm.value;
-      this.store.dispatch(AuthActions.login({ 
-        username, 
-        password 
-      }));
+      this.store.dispatch(AuthActions.login({ username, password }));
     }
   }
 } 

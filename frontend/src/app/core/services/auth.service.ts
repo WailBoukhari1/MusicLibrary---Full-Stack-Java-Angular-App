@@ -6,6 +6,9 @@ import { environment } from '../../../environments/environment';
 import { User } from '../models/user.model';
 import { ApiResponse, AuthResponse, LoginRequest, RegisterRequest, UserResponse } from '../models/auth.model';
 import { JwtHelperService } from '@auth0/angular-jwt';
+import { map, catchError } from 'rxjs/operators';
+import { Store } from '@ngrx/store';
+import { AuthActions } from '../../store/auth/auth.actions';
 
 @Injectable({
   providedIn: 'root'
@@ -22,13 +25,22 @@ export class AuthService {
 
   constructor(
     private http: HttpClient,
-    private router: Router
+    private router: Router,
+    private store: Store
   ) {
+    // Initialize auth state
+    this.store.dispatch(AuthActions.init());
     this.loadStoredUser();
     // Check token validity periodically
     setInterval(() => {
       this.isAuthenticatedSubject.next(this.hasValidToken());
     }, 60000); // Check every minute
+
+    // Check for existing token on service initialization
+    const token = localStorage.getItem('token');
+    if (token && !this.jwtHelper.isTokenExpired(token)) {
+      this.getCurrentUser().subscribe();
+    }
   }
 
   private loadStoredUser(): void {
@@ -52,22 +64,47 @@ export class AuthService {
   }
 
   login(credentials: LoginRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/login`, credentials)
+    return this.http.post<AuthResponse>(`${this.apiUrl}/login`, credentials)
       .pipe(
         tap(response => {
+          if (!response.success || !response.data) {
+            throw new Error(response.error || 'Login failed');
+          }
+          // Store token
           localStorage.setItem('token', response.data.token);
-          // Store user data based on the token response
-          const userData = {
+          
+          // Update current user
+          const user: User = {
             username: response.data.username,
-            roles: response.data.roles
+            roles: response.data.roles,
+            id: response.data.username,
+            email: '',
+            active: true,
+            createdAt: new Date()
           };
-          localStorage.setItem('user', JSON.stringify(userData));
+          this.currentUserSubject.next(user);
+        }),
+        catchError(error => {
+          console.error('Login error:', error);
+          return throwError(() => error);
         })
       );
   }
 
   register(username: string, email: string, password: string): Observable<UserResponse> {
-    return this.http.post<UserResponse>(`${this.apiUrl}/register`, { username, email, password });
+    const registerData: RegisterRequest = {
+      username,
+      email,
+      password
+    };
+
+    return this.http.post<UserResponse>(`${this.apiUrl}/register`, registerData)
+      .pipe(
+        catchError(error => {
+          console.error('Registration error:', error);
+          return throwError(() => error);
+        })
+      );
   }
 
   private handleAuthResponse(response: AuthResponse): void {
@@ -90,11 +127,11 @@ export class AuthService {
     this.router.navigate([route]);
   }
 
-  logout(): Observable<void> {
+  logout(): void {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     this.router.navigate(['/login']);
-    return this.http.post<void>(`${this.apiUrl}/auth/logout`, {});
+    this.currentUserSubject.next(null);
   }
 
   getToken(): string | null {
@@ -152,11 +189,20 @@ export class AuthService {
   }
 
   getCurrentUser(): Observable<UserResponse> {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      return throwError(() => new Error('No token found'));
-    }
-    return this.http.get<UserResponse>(`${this.apiUrl}/me`);
+    return this.http.get<UserResponse>(`${this.apiUrl}/me`)
+      .pipe(
+        tap(response => {
+          if (!response.success || !response.data) {
+            throw new Error('Failed to get user data');
+          }
+          this.currentUserSubject.next(response.data);
+        }),
+        catchError(error => {
+          console.error('Get current user error:', error);
+          this.logout(); // Clear invalid session
+          return throwError(() => error);
+        })
+      );
   }
 
   validateToken(): Observable<ApiResponse<boolean>> {
@@ -164,29 +210,67 @@ export class AuthService {
   }
 
   refreshToken(token: string): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/refresh`, { token });
+    return this.http.post<AuthResponse>(`${this.apiUrl}/refresh`, { token })
+      .pipe(
+        tap(response => {
+          if (!response.success || !response.data) {
+            throw new Error('Token refresh failed');
+          }
+          localStorage.setItem('token', response.data.token);
+        }),
+        catchError(error => {
+          console.error('Token refresh error:', error);
+          this.logout(); // Clear invalid session
+          return throwError(() => error);
+        })
+      );
   }
 
   private startRefreshTokenTimer(authResponse: AuthResponse) {
-    if (authResponse.data?.token) {
-      const jwtToken = JSON.parse(atob(authResponse.data.token.split('.')[1]));
-      const expires = new Date(jwtToken.exp * 1000);
-      const timeout = expires.getTime() - Date.now() - (60 * 1000);
-      
-      this.refreshTokenTimeout = setTimeout(() => {
-        this.refreshToken(authResponse.data.token).subscribe();
-      }, timeout);
+    // Check if authResponse and data exist and have a token
+    if (authResponse?.data?.token) {
+      try {
+        const jwtToken = JSON.parse(atob(authResponse.data.token.split('.')[1]));
+        const expires = new Date(jwtToken.exp * 1000);
+        const timeout = expires.getTime() - Date.now() - (60 * 1000); // Refresh 1 minute before expiry
+        
+        // Clear any existing timer
+        this.stopRefreshTokenTimer();
+        
+        // Only set timer if timeout is positive
+        if (timeout > 0) {
+          this.refreshTokenTimeout = setTimeout(() => {
+            this.refreshToken(authResponse.data!.token).subscribe({
+              error: (error) => {
+                console.error('Failed to refresh token:', error);
+                this.logout(); // Logout on refresh failure
+              }
+            });
+          }, timeout);
+        } else {
+          // Token is already expired or about to expire
+          this.logout();
+        }
+      } catch (error) {
+        console.error('Error parsing JWT token:', error);
+        this.logout();
+      }
+    } else {
+      console.warn('No valid token found in auth response');
+      this.logout();
     }
   }
 
   private stopRefreshTokenTimer() {
     if (this.refreshTokenTimeout) {
       clearTimeout(this.refreshTokenTimeout);
+      this.refreshTokenTimeout = null;
     }
   }
 
   isAuthenticated(): boolean {
-    return !!localStorage.getItem('token');
+    const token = localStorage.getItem('token');
+    return token !== null && !this.jwtHelper.isTokenExpired(token);
   }
 
   getStoredUser() {

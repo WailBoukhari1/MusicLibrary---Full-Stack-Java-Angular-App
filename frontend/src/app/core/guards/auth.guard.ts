@@ -3,6 +3,7 @@ import { CanActivate, Router, UrlTree, ActivatedRouteSnapshot, RouterStateSnapsh
 import { Store } from '@ngrx/store';
 import { Observable, map, take } from 'rxjs';
 import { selectIsAuthenticated, selectUser } from '../../store/auth/auth.selectors';
+import { AuthService } from '../services/auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -25,19 +26,22 @@ export class AuthGuard {
   }
 }
 
-export const authGuard: CanActivateFn = (route, state) => {
-  const store = inject(Store);
+export const authGuard = () => {
+  const authService = inject(AuthService);
   const router = inject(Router);
 
-  return store.select(selectIsAuthenticated).pipe(
-    take(1),
-    map(isAuthenticated => {
-      if (!isAuthenticated) {
-        return router.createUrlTree(['/auth/login']);
-      }
-      return true;
-    })
-  );
+  if (authService.isAuthenticated()) {
+    return true;
+  }
+
+  // Store the attempted URL for redirecting
+  const currentUrl = window.location.pathname;
+  if (currentUrl !== '/auth/login') {
+    localStorage.setItem('redirectUrl', currentUrl);
+  }
+  
+  router.navigate(['/auth/login']);
+  return false;
 };
 
 export const adminGuard: CanActivateFn = (route, state) => {

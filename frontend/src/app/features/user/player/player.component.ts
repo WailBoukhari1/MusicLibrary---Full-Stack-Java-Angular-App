@@ -32,7 +32,7 @@ import { environment } from '../../../../environments/environment';
     FormsModule
   ],
   templateUrl:"player.component.html",
-  styleUrls:['player.component.scss']
+  // styleUrls:['player.component.scss']
 })
 export class PlayerComponent implements OnInit, OnDestroy {
   currentTrack$: Observable<Song | null>;
