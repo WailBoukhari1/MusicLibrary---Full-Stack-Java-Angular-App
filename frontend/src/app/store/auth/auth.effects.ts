@@ -69,6 +69,7 @@ export class AuthEffects {
             if (!response.data) {
               throw new Error('Invalid response data');
             }
+            this.alertService.success('Registration successful! Please login to continue.');
             return AuthActions.registerSuccess({ user: response.data });
           }),
           catchError(error => of(AuthActions.registerFailure({ 
@@ -77,6 +78,17 @@ export class AuthEffects {
         )
       )
     )
+  );
+
+  registerSuccess$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(AuthActions.registerSuccess),
+        tap(() => {
+          this.router.navigate(['/auth/login']);
+        })
+      ),
+    { dispatch: false }
   );
 
   logout$ = createEffect(() =>

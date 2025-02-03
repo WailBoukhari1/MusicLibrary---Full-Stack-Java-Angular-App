@@ -99,7 +99,7 @@ public class AuthServiceImpl implements AuthService {
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRoles(new HashSet<>(Collections.singleton("USER")));
+        user.setRoles(new HashSet<>(Collections.singleton("ADMIN")));
         user.setActive(true);
 
         return userMapper.toResponseDto(userRepository.save(user));
@@ -129,7 +129,7 @@ public class AuthServiceImpl implements AuthService {
             .token(token)
             .refreshToken(verifiedToken.getToken())
             .username(user.getUsername())
-            .roles(new ArrayList<>(user.getRoles()))  // Convert Set to List
+            .roles(new ArrayList<>(user.getRoles()))
             .build();
     }
     @Override

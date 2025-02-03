@@ -45,9 +45,12 @@ export class AppComponent implements OnInit {
   constructor(private store: Store, private authService: AuthService) {}
 
   ngOnInit() {
-    if (this.authService.isAuthenticated()) {
-      const user = this.authService.getStoredUser();
-      this.store.dispatch(AuthActions.loginSuccess({ user, token: localStorage.getItem('token') || '' }));
+    // Initialize auth state
+    this.store.dispatch(AuthActions.init());
+    
+    // If we have a token, also get current user
+    if (this.authService.getToken()) {
+      this.store.dispatch(AuthActions.getCurrentUser());
     }
   }
 

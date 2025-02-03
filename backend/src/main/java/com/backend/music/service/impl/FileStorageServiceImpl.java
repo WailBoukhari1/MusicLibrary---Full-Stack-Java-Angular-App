@@ -6,44 +6,28 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.mp3.Mp3Parser;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.data.mongodb.gridfs.GridFsOperations;
+import org.springframework.data.mongodb.gridfs.GridFsTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 import lombok.RequiredArgsConstructor;
+import com.mongodb.client.gridfs.model.GridFSFile;
 
-import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class FileStorageServiceImpl implements FileStorageService {
 
-    @Value("${file.upload-dir}")
-    private String uploadDir;
-
+    private final GridFsTemplate gridFsTemplate;
+    private final GridFsOperations gridFsOperations;
     private final FileValidationUtils fileValidationUtils;
-    private Path fileStorageLocation;
-
-    @PostConstruct
-    public void init() {
-        this.fileStorageLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
-        try {
-            Files.createDirectories(this.fileStorageLocation);
-        } catch (IOException ex) {
-            throw new RuntimeException("Could not create the directory for uploaded files", ex);
-        }
-    }
 
     @Override
     public String store(MultipartFile file) {
@@ -60,36 +44,42 @@ public class FileStorageServiceImpl implements FileStorageService {
 
         String fileName = UUID.randomUUID().toString() + getFileExtension(file.getOriginalFilename());
         try {
-            Path targetLocation = this.fileStorageLocation.resolve(fileName);
-            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
-            return fileName;
+            // Store file in GridFS(khdam db layr7ambak)
+            return gridFsTemplate.store(
+                file.getInputStream(),
+                fileName,
+                file.getContentType()
+            ).toString();
         } catch (IOException ex) {
             throw new RuntimeException("Could not store file " + fileName, ex);
         }
     }
 
     @Override
-    public Resource load(String fileName) {
+    public Resource load(String fileId) {
         try {
-            Path filePath = this.fileStorageLocation.resolve(fileName).normalize();
-            Resource resource = new UrlResource(filePath.toUri());
-            if (resource.exists()) {
-                return resource;
-            } else {
-                throw new RuntimeException("File not found: " + fileName);
+            GridFSFile file = gridFsTemplate.findOne(org.springframework.data.mongodb.core.query.Query.query(
+                org.springframework.data.mongodb.core.query.Criteria.where("_id").is(fileId)
+            ));
+            
+            if (file == null) {
+                throw new RuntimeException("File not found: " + fileId);
             }
-        } catch (MalformedURLException ex) {
-            throw new RuntimeException("File not found: " + fileName, ex);
+
+            return new InputStreamResource(gridFsOperations.getResource(file).getInputStream());
+        } catch (IOException ex) {
+            throw new RuntimeException("Could not load file: " + fileId, ex);
         }
     }
 
     @Override
-    public void delete(String fileName) {
+    public void delete(String fileId) {
         try {
-            Path filePath = this.fileStorageLocation.resolve(fileName).normalize();
-            Files.deleteIfExists(filePath);
-        } catch (IOException ex) {
-            throw new RuntimeException("Could not delete file: " + fileName, ex);
+            gridFsTemplate.delete(org.springframework.data.mongodb.core.query.Query.query(
+                org.springframework.data.mongodb.core.query.Criteria.where("_id").is(fileId)
+            ));
+        } catch (Exception ex) {
+            throw new RuntimeException("Could not delete file: " + fileId, ex);
         }
     }
 

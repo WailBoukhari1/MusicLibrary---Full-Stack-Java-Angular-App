@@ -33,7 +33,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<UserResponse>> register(@Valid @RequestBody RegisterRequest request) {
         try {
-            UserResponse user = userService.createUser(request);
+            UserResponse user = authService.register(request);
             return ResponseEntity.ok(ApiResponse.<UserResponse>builder()
                 .success(true)
                 .data(user)
