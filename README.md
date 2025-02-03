@@ -18,7 +18,6 @@ A full-stack music library application built with **Spring Boot** for the backen
 - 🎫 **JWT Authentication**: Token-based authentication for secure access.
 - 📁 **File Upload/Download**: Upload and stream music files.
 - 🗄️ **MongoDB Integration**: Scalable NoSQL database for storing data.
-- 📝 **Swagger Documentation**: Interactive API documentation.
 - 🧪 **Unit Tests**: Comprehensive testing for backend functionality.
 
 ## 🚀 Quick Start
