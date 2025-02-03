@@ -250,9 +250,17 @@ export class UserLibraryComponent implements OnInit, OnDestroy {
     this.filterForm.patchValue({ [filterName]: '' });
   }
 
+  clearAllFilters() {
+    this.filterForm.patchValue({
+      search: '',
+      category: '',
+      genre: '',
+      year: ''
+    });
+  }
+
   hasActiveFilters(): boolean {
-    return Object.values(this.filterForm.value)
-      .some(value => value !== '' && value !== null);
+    return Object.values(this.filterForm.value).some(value => value !== '');
   }
 
   ngOnDestroy(): void {

@@ -137,8 +137,21 @@
 
   <!-- No Results -->
   <div class="flex flex-col items-center justify-center h-60 text-center" 
-    *ngIf="!isLoading && (albums$ | async)?.length === 0">
-    <mat-icon class="text-4xl text-gray-300 mb-2">album</mat-icon>
-    <p class="text-sm text-gray-500">No albums found</p>
+    *ngIf="!isLoading && (filteredAlbums$ | async)?.length === 0">
+    <mat-icon class="text-4xl text-gray-300 mb-4">album</mat-icon>
+    <h3 class="text-lg font-medium text-gray-700 mb-2">No albums found</h3>
+    <p class="text-sm text-gray-500 max-w-md">
+      {{ hasActiveFilters() ? 
+        'Try adjusting your filters or search terms to find what you\'re looking for.' : 
+        'Your library is empty. Albums you add will appear here.' }}
+    </p>
+    <button mat-stroked-button 
+            color="primary" 
+            class="mt-4"
+            *ngIf="hasActiveFilters()"
+            (click)="clearAllFilters()">
+      <mat-icon class="mr-2">filter_alt_off</mat-icon>
+      Clear all filters
+    </button>
   </div>
 </div>
