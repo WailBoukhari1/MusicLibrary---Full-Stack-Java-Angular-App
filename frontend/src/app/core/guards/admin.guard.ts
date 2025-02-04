@@ -10,16 +10,13 @@ export const adminGuard = () => {
   const router = inject(Router);
   const authService = inject(AuthService);
 
-  // First check if there's a token
   if (!authService.getToken()) {
     router.navigate(['/auth/login']);
     return false;
   }
 
   return store.select(selectUser).pipe(
-    // Wait until user is loaded (not null)
     filter(user => user !== null),
-    // Then take the first non-null value
     take(1),
     map(user => {
       if (!user || !user.roles.includes('ADMIN')) {

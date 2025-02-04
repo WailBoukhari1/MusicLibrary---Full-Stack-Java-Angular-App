@@ -206,7 +206,7 @@ export class AuthService {
   }
 
   validateToken(): Observable<ApiResponse<boolean>> {
-    return this.http.get<ApiResponse<boolean>>(`${this.apiUrl}/auth/validate`);
+    return this.http.get<ApiResponse<boolean>>(`${this.apiUrl}/validate`);
   }
 
   refreshToken(token: string): Observable<AuthResponse> {

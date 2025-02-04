@@ -142,19 +142,22 @@ export class UserLibraryComponent implements OnInit, OnDestroy {
     
     this.albumService.getAlbums().pipe(
       map(response => {
-        if (!response.success || !response.data?.content) {
+        if (!response.success) {
           throw new Error('Failed to load albums');
         }
-        return response.data.content;
+        return response.data?.content ?? [];
       }),
       switchMap(albums => {
+        if (albums.length === 0) {
+          this.isLoading = false;
+          return of([]);
+        }
+        
         // Map each album to include its songs
         const albumsWithSongs$ = albums.map(album => {
           if (album.songs && album.songs.length > 0) {
-            // Songs are already included in the response
             return of(album);
           }
-          // If no songs in response, try to load them from songIds
           if (album.songIds?.length) {
             return forkJoin(
               album.songIds.map(id => this.songService.getSongById(id))
@@ -173,14 +176,14 @@ export class UserLibraryComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: (albums) => {
-        console.log('Loaded albums:', albums); // Debug log
         this.albumsSubject.next(albums);
-        this.applyFilters(); // Apply initial filters
+        this.applyFilters();
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Error loading albums:', error); // Debug log
+        console.error('Error loading albums:', error);
         this.showError('Failed to load albums');
+        this.albumsSubject.next([]);
         this.isLoading = false;
       }
     });
